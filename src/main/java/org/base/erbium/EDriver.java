@@ -13,9 +13,9 @@ import static java.lang.Thread.sleep;
 public class EDriver {
 
     private final WebDriver $webDriver;
-    private final PlaybackOptionsSet $playbackOptionsSet;
-    private final ReportingOptionsSet $reportingOptionsSet;
-    private final AdvancedOptionsSet $advancedOptionsSet;
+    private PlaybackOptionsSet $playbackOptionsSet;
+    private ReportingOptionsSet $reportingOptionsSet;
+    private AdvancedOptionsSet $advancedOptionsSet;
     ScreenshotMode $screenshotMode;
     ScreenshotPoint $screenshotPoint;
     EScreenShotDispatcher $screenshotDispatcher;
@@ -46,6 +46,40 @@ public class EDriver {
         }
 
         frameworkSettingsProtection();
+    }
+
+    public EDriver(EDriver driver) {
+        // when the driver is copied for page object support
+        $webDriver = driver.getWebDriver();
+        $hooking = driver.$hooking;
+
+
+        if($hooking) {
+            class Quit extends Thread {
+                @Override
+                public void run() {
+                    $webDriver.quit();
+                }
+            }
+            Runtime.getRuntime().addShutdownHook(new Quit());
+        }
+
+        //frameworkSettingsProtection();
+        initDriverProperties();
+        setTestParams(driver.$testParamsSet);
+
+    }
+
+    void setOptionsSet(PlaybackOptionsSet playbackOptionsSet) {
+        $playbackOptionsSet = playbackOptionsSet;
+    }
+
+    void setOptionsSet(AdvancedOptionsSet advancedOptionsSet) {
+        $advancedOptionsSet = advancedOptionsSet;
+    }
+
+    void setOptionsSet(ReportingOptionsSet reportingOptionsSet) {
+        $reportingOptionsSet = reportingOptionsSet;
     }
 
     void initDriverProperties() {

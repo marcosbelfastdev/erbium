@@ -2,15 +2,13 @@ package org.base.erbium;
 
 import com.sun.mail.util.BASE64DecoderStream;
 import com.sun.mail.util.BASE64EncoderStream;
-
+import javax.crypto.*;
+import javax.crypto.spec.SecretKeySpec;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
-import javax.crypto.*;
-import javax.crypto.spec.SecretKeySpec;
 
-//import com.sun.mail.util.BASE64EncoderStream;
 
 public class Crypto {
 
