@@ -975,8 +975,12 @@ public class EElement {
 		return isDisplayed;
 	}
 
-	void highlight(HighlightOptions... options) {
-		highlight(getHighLightStyle(), options); //  deepskyblue border-radius: 1px;
+	protected EElement highlight(HighlightOptions... options) {
+		return highlight(getHighLightStyle(), options); //  deepskyblue border-radius: 1px;
+	}
+
+	public EElement highlight() {
+		return highlight(null, null);
 	}
 	
 	public EElement highlight(String style, HighlightOptions... options) {
