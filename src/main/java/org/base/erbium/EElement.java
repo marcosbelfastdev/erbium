@@ -979,7 +979,7 @@ public class EElement {
 		highlight(getHighLightStyle(), options); //  deepskyblue border-radius: 1px;
 	}
 	
-	EElement highlight(String style, HighlightOptions... options) {
+	public EElement highlight(String style, HighlightOptions... options) {
 		if (!isExecutorEnabled())
 			return this;
 		if (style == null)
