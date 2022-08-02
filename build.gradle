@@ -25,15 +25,22 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
+plugins {
+    id 'java'
+    id 'maven'
+    id 'idea'
+    id 'eclipse'
+}
+
 apply plugin: "java"
 apply plugin: "idea"
 apply plugin: "eclipse"
 apply plugin: "maven"
 
-group "com.github.detro"
+group "com.github.marcosbelfastdev"
 
 task wrapper(type: Wrapper) {
-    gradleVersion   = "2.5"
+    gradleVersion   = "7.5"
     jarFile         = "gradle/gradle-wrapper.jar"
 }
 
@@ -48,16 +55,15 @@ compileJava {
     options.compilerArgs.add("-Xlint:deprecation")
 }
 
-ext.seleniumVersion         = "3.1.0"
+ext.seleniumVersion         = "3.141.59"
 project.archivesBaseName    = project.name
-project.version             = "2.1.0"
+project.version             = "1.0.0"
 
-ext.projectGroupId          = "com.github.detro"
-ext.projectArtifactId       = "phantomjsdriver"
-ext.projectLongName         = "PhantomJS Driver (GhostDriver)"
+ext.projectGroupId          = "com.github.marcosbelfastdev"
+ext.projectArtifactId       = "erbium"
+ext.projectLongName         = "Erbium (Layer 2)"
 ext.projectArtefactDir      = "jars/"
-ext.projectMainClass        = "org.openqa.selenium.phantomjs.PhantomJSDriver"
-ext.projectCreator          = "Ivan De Marino (https://github.com/detro)"
+ext.projectCreator          = "Marcos Ghiraldelli (https://github.com/marcosbelfastdev)"
 
 
 dependencies {
