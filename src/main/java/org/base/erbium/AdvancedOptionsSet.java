@@ -1,4 +1,4 @@
-package org.base.erbium;
+package main.java.org.base.erbium;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -6,7 +6,7 @@ import java.util.Set;
 
 class AdvancedOptionsSet {
 	
-	private final Map<AdvancedOptions, Object> $options;
+	private final Map<org.base.erbium.AdvancedOptions, Object> $options;
 
 	public AdvancedOptionsSet(Map<AdvancedOptions, Object> options) {
 		$options = new HashMap<>();

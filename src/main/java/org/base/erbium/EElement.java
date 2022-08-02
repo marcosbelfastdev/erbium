@@ -4,6 +4,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.Coordinates;
 import org.openqa.selenium.interactions.Locatable;
+import org.openqa.selenium.remote.RemoteWebDriver;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 
@@ -15,7 +16,7 @@ import static org.base.erbium.EDriver.*;
 
 public class EElement {
 
-	EDriver $driver;
+	org.base.erbium.EDriver $driver;
 	// used to track highlighted elements and unhighlight them
 	private WebElement $lastElementHighlighted;
 	private final String EMPTY_STRING = "";
@@ -289,6 +290,8 @@ public class EElement {
 				exitPoint();
 			}
 		}
+
+		RemoteWebDriver
 
 		class ClickError {
 			void run(Exception e) {
@@ -708,7 +711,7 @@ public class EElement {
 	
 	public EElement setPassword(String text) {
 		String encText;
-		if((boolean) getOption(Common.HIDE_PASSWORDS))
+		if((boolean) getOption(org.base.erbium.Common.HIDE_PASSWORDS))
 			encText = "******";
 		else
 			encText = text;
