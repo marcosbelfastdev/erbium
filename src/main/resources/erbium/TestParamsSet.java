@@ -1,7 +1,5 @@
 package org.base.erbium;
 
-import net.bytebuddy.build.HashCodeAndEqualsPlugin;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
