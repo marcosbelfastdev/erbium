@@ -4,7 +4,6 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.support.events.EventFiringWebDriver;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
