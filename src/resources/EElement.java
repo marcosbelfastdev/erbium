@@ -4,8 +4,7 @@ import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.Coordinates;
 import org.openqa.selenium.interactions.Locatable;
-import org.openqa.selenium.support.ui.ExpectedConditions;
-import org.openqa.selenium.support.ui.WebDriverWait;
+
 
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -289,8 +288,6 @@ public class EElement {
 				exitPoint();
 			}
 		}
-
-		RemoteWebDriver
 
 		class ClickError {
 			void run(Exception e) {

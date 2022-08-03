@@ -1,7 +1,6 @@
 package com.github.marcosbelfastdev.erbium;
 
 import org.openqa.selenium.*;
-import org.openqa.selenium.support.events.EventFiringWebDriver;
 
 import java.io.File;
 import java.util.*;
