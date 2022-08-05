@@ -1,0 +1,16 @@
+ext {
+    getVariable = { name ->
+        String result = null
+        if (project.hasProperty(name)) {
+            result = project.getProperties().get(name)
+        }
+        if (System.getenv(name) != null) {
+            result = System.getenv().get(name)
+        }
+        if (System.getProperty(name) != null) {
+            result = System.getProperty(name)
+        }
+        return result
+    }
+    erbiumVersion = '4.3.2'
+}
