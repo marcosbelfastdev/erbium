@@ -12,6 +12,7 @@ repositories {
 
 dependencies {
   implementation 'com.google.guava:guava:29.0-jre'
+    implementation 'org.seleniumhq.selenium:selenium-java:3.141.59'
 }
 
 task sourcesJar(type: Jar, dependsOn: classes) {
