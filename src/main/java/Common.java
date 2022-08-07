@@ -1,8 +1,8 @@
-package org.base.erbium;
-
 public enum Common {
+    LOAD_ON_DEMAND,
     INTERACT_DELAY_BEFORE,
     RESOLVE_TIMEOUT,
+    CORE_SELENIUM_IMPLICITLY_WAIT, // only used when the core Selenium webdriver is exposed
     RETRY_INTERVAL,
     HIGHLIGHT_ELEMENTS,
     HIGHLIGHT_DELAY_AFTER,

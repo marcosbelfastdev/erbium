@@ -1,4 +1,4 @@
-public enum AlertOptions {
+public enum AlertOption {
     DISMISS,
     CONFIRM
 }
