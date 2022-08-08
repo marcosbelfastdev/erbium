@@ -1,11 +1,14 @@
-import exceptions.*;
+package com.github.marcosbelfastdev.erbium.core;
 
+import com.github.marcosbelfastdev.erbium.exceptions.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+import static com.github.marcosbelfastdev.erbium.core.ErrorHandling.end;
+
 class PlaybackOptions {
-	
+
 	private final Map<Common, Object> _options;
 
 	public PlaybackOptions() {
@@ -49,9 +52,6 @@ class PlaybackOptions {
 		options.put(Common.FALLBACK_TO_EXECUTOR, true);
 		options.put(Common.WINDOW_LOCKING, true);
 		options.put(Common.WINDOW_SEARCH, true);
-//		options.put(Common.ENABLE_TIMERS, false);
-//		options.put(Common.WAITFOR_INITIAL_TIME, 200);
-//		options.put(Common.REPORT_TO_TESTNG, false);
 		options.put(Common.HIDE_PASSWORDS, true);
 		options.put(Common.ENABLE_SCREENSHOTS, true);
 		return new PlaybackOptions(options);
@@ -60,7 +60,7 @@ class PlaybackOptions {
 	public void evaluateOptionChange(Common option, Object value) {
 
 		if ((long) value < 0) {
-			ErrorHandling.end(OptionValueTooSmall.class);
+			end(OptionValueTooSmall.class);
 		}
 
 		Common[] common = {
@@ -78,74 +78,74 @@ class PlaybackOptions {
 		switch (option) {
 			case RETRY_INTERVAL:
 				if ((long) value < 20) {
-					ErrorHandling.end(RetryIntervalTooSmall.class);
+					end(RetryIntervalTooSmall.class);
 				}
-				if ((Long) value > ((Long)_options.get(Common.RESOLVE_TIMEOUT) / 3)) {
-					ErrorHandling.end(RetryIntervalTooBig.class);
+				if ((Long) value > ((Long) _options.get(Common.RESOLVE_TIMEOUT) / 3)) {
+					end(RetryIntervalTooBig.class);
 				}
-				if ((Long) value > ((Long)_options.get(Common.ENABLED_TIMEOUT))) {
-					ErrorHandling.end(RetryIntervalTooBig.class);
+				if ((Long) value > ((Long) _options.get(Common.ENABLED_TIMEOUT))) {
+					end(RetryIntervalTooBig.class);
 				}
-				if ((Long) value > ((Long)_options.get(Common.VISIBLE_TIMEOUT))) {
-					ErrorHandling.end(RetryIntervalTooBig.class);
+				if ((Long) value > ((Long) _options.get(Common.VISIBLE_TIMEOUT))) {
+					end(RetryIntervalTooBig.class);
 				}
 				break;
 			case RESOLVE_TIMEOUT:
 				if ((long) value < 2000) {
-					ErrorHandling.end(ResolveTimeoutTooSmall.class);
+					end(ResolveTimeoutTooSmall.class);
 				}
-				if ((long) value < ((Long)_options.get(Common.RETRY_INTERVAL) * 3)) {
-					ErrorHandling.end(ResolveTimeoutTooSmall.class);
+				if ((long) value < ((Long) _options.get(Common.RETRY_INTERVAL) * 3)) {
+					end(ResolveTimeoutTooSmall.class);
 				}
 				break;
 			case ENABLED_TIMEOUT:
 				if ((long) value < 100) {
-					ErrorHandling.end(EnabledTimeoutTooSmall.class);
+					end(EnabledTimeoutTooSmall.class);
 				}
 				if ((long) value > (long) _options.get(Common.RESOLVE_TIMEOUT)) {
-					ErrorHandling.end(EnabledTimeoutTooBig.class);
+					end(EnabledTimeoutTooBig.class);
 				}
 				break;
 			case VISIBLE_TIMEOUT:
 				if ((long) value < 100) {
-					ErrorHandling.end(VisibleTimeoutTooSmall.class);
+					end(VisibleTimeoutTooSmall.class);
 				}
 				if ((long) value > (long) _options.get(Common.RESOLVE_TIMEOUT)) {
-					ErrorHandling.end(VisibleTimeoutTooBig.class);
+					end(VisibleTimeoutTooBig.class);
 				}
 				break;
 			case SEARCHSCROLL_RESOLVE:
 				if ((long) value < 1) {
-					ErrorHandling.end(SearchScrollTimeoutTooSmall.class);
+					end(SearchScrollTimeoutTooSmall.class);
 				}
 				break;
 		}
 	}
 
-
 	protected void setOption(Common option, Object value) {
-		evaluateOptionChange(option, value);
-		if(_options.containsKey(option))
+		if (_options.containsKey(option)) {
+			if (!getOption(option).getClass().equals(value.getClass()))
+				end(IncompatibleOptionTypes.class);
+			evaluateOptionChange(option, value);
 			_options.replace(option, value);
-		else
+		} else
 			_options.put(option, value);
-		
 	}
-	
+
 	protected Object getOption(Common option) {
-		
+
 		Object value = null;
-		
-		if(_options.containsKey(option))
+
+		if (_options.containsKey(option))
 			value = _options.get(option);
-		
+
 		return value;
 	}
 
 	public void removeOption(Common playbackOption) {
 		_options.remove(playbackOption);
 	}
-	
+
 	protected Map<Common, Object> getOptions() {
 		return _options;
 	}
@@ -155,6 +155,16 @@ class PlaybackOptions {
 		Map<Common, Object> options = new HashMap<Common, Object>(_options);
 		return new PlaybackOptions(options);
 	}
+
+	// Friendly options (getters)
+	public boolean shouldLoadOnDemand() {
+		return (boolean) getOption(Common.LOAD_ON_DEMAND);
+	}
+
+	public long resolve() {
+		return (long) getOption(Common.RESOLVE_TIMEOUT);
+	}
+
 
 	@Override
 	public String toString() {

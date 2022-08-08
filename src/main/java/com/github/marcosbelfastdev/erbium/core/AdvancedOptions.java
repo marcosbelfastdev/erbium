@@ -1,3 +1,5 @@
+package com.github.marcosbelfastdev.erbium.core;
+
 import java.util.HashMap;
 import java.util.Map;
 

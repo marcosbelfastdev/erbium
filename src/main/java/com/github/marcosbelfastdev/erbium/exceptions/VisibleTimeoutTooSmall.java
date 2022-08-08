@@ -1,4 +1,4 @@
-package exceptions;
+package com.github.marcosbelfastdev.erbium.exceptions;
 
 public class VisibleTimeoutTooSmall extends Throwable {
 

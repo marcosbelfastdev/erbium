@@ -1,3 +1,5 @@
+package com.github.marcosbelfastdev.erbium.core;
+
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 

@@ -33,11 +33,11 @@ public class EFrame extends ElementCompositor {
         return $eElement.getWebElement();
     }
     
-    /*public void setOption(Common option, Object value) {
+    /*public void setOption(com.github.marcosbelfastdev.erbium.core.Common option, Object value) {
         $labElement.setOption(option, value);
     }
     
-    public Object getOption(Common option) {
+    public Object getOption(com.github.marcosbelfastdev.erbium.core.Common option) {
         return _getOption($labElement.getDriverIndex(), option);
     }*/
    

@@ -1,3 +1,5 @@
+package com.github.marcosbelfastdev.erbium.core;
+
 import org.openqa.selenium.Cookie;
 import org.openqa.selenium.WebDriver;
 import org.openqa.selenium.logging.Logs;

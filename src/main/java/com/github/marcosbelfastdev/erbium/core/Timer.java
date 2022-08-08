@@ -1,3 +1,5 @@
+package com.github.marcosbelfastdev.erbium.core;
+
 import static java.util.Objects.isNull;
 
 public class Timer {
@@ -19,7 +21,7 @@ public class Timer {
         return endTime - System.currentTimeMillis() <= 0;
     }
 
-    public void sleep(int sleep) {
+    public void sleep(long sleep) {
         try {
             Thread.sleep(sleep);
         } catch (InterruptedException e) {
