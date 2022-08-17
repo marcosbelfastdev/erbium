@@ -2,14 +2,13 @@ package com.github.marcosbelfastdev.erbium.core;
 
 import org.openqa.selenium.WebDriver;
 
-public interface IDriverOptions {
+public interface IElementOptions {
     WebDriver getWrappedWebDriver();
     void resetPlaybackOptions();
     void setPlaybackOptions();
-    DriverOptions setOption(Common common, Object option);
+    Element setOption(Common common, Object option);
     Object getOption(Common playbackOption);
-    void frameworkSettingsProtection();
-    DriverOptions reset();
+    Element reset();
     Boolean shouldLoad();
     Long delayBefore();
     Long resolve();

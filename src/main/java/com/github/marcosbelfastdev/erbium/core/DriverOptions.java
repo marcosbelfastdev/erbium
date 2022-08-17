@@ -27,20 +27,23 @@ public class DriverOptions implements IDriverOptions {
         return _driver;
     }
 
-    protected void resetPlaybackOptions() {
+    @Override
+    public void resetPlaybackOptions() {
         for (Common playbackOption : _changedPlaybackOptions.getOptions().keySet()) {
             _playbackOptions.setOption(playbackOption, _changedPlaybackOptions.getOption(playbackOption));
             _changedPlaybackOptions.removeOption(playbackOption);
         }
     }
 
-    protected void setPlaybackOptions() {
+    @Override
+    public void setPlaybackOptions() {
         _playbackOptions = PlaybackOptions.init();
         setOption(Common.SCREEN_POSITION, _driver.manage().window().getPosition());
         setOption(Common.SCREEN_SIZE, _driver.manage().window().getSize());
         _changedPlaybackOptions = new PlaybackOptions();
     }
 
+    @Override
     public DriverOptions setOption(Common playbackOption, Object value) {
         frameworkSettingsProtection();
         _changedPlaybackOptions.setOption(playbackOption, value);
@@ -48,6 +51,7 @@ public class DriverOptions implements IDriverOptions {
     }
 
     @SuppressWarnings("unchecked")
+    @Override
     public Object getOption(Common playbackOption) {
         Object value;
         if (_changedPlaybackOptions.getOptions().containsKey(playbackOption))
@@ -58,7 +62,8 @@ public class DriverOptions implements IDriverOptions {
         return value;
     }
 
-    protected void frameworkSettingsProtection() {
+    @Override
+    public void frameworkSettingsProtection() {
         try {
             if(!isNull(_driver)) {
                 _driver.manage().timeouts().pageLoadTimeout((int) getOption(Common.PAGE_LOAD_TIMEOUT), TimeUnit.MILLISECONDS);
@@ -76,8 +81,8 @@ public class DriverOptions implements IDriverOptions {
      * These settings are:
      * Selenium core page load timeout that was set at the driver start;
      * The Selenium core implicitly wait is set to 0.
-     * @return
      */
+    @Override
     public DriverOptions reset() {
         // Playback Options
         resetPlaybackOptions();
