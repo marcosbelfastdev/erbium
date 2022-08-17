@@ -156,15 +156,6 @@ class PlaybackOptions {
 		return new PlaybackOptions(options);
 	}
 
-	// Friendly options (getters)
-	public boolean shouldLoadOnDemand() {
-		return (boolean) getOption(Common.LOAD_ON_DEMAND);
-	}
-
-	public long resolve() {
-		return (long) getOption(Common.RESOLVE_TIMEOUT);
-	}
-
 
 	@Override
 	public String toString() {
