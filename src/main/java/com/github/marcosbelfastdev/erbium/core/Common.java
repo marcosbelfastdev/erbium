@@ -1,8 +1,10 @@
-package org.base.erbium;
+package com.github.marcosbelfastdev.erbium.core;
 
 public enum Common {
+    LOAD_ON_DEMAND,
     INTERACT_DELAY_BEFORE,
     RESOLVE_TIMEOUT,
+    CORE_SELENIUM_IMPLICITLY_WAIT, // only used when the core Selenium webdriver is exposed
     RETRY_INTERVAL,
     HIGHLIGHT_ELEMENTS,
     HIGHLIGHT_DELAY_AFTER,
@@ -29,9 +31,11 @@ public enum Common {
     FALLBACK_TO_EXECUTOR,
     WINDOW_LOCKING,
     WINDOW_SEARCH,
-    ENABLE_TIMERS,
-    WAITFOR_INITIAL_TIME,
-    REPORT_TO_TESTNG,
     HIDE_PASSWORDS,
-    ENABLE_SCREENSHOTS
+    ENABLE_SCREENSHOTS,
+    SCREEN_SIZE,
+    SCREEN_POSITION,
+    FULLSCREEN;
+
+
 }
