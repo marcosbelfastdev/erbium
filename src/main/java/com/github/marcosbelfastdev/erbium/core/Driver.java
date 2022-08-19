@@ -14,6 +14,10 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
         super(driver);
     }
 
+    public Driver executeScript(String script, Object... args) {
+        ((JavascriptExecutor)_driver).executeScript(script, args);
+        return this;
+    }
 
     @Override
     public Driver get(String url) {

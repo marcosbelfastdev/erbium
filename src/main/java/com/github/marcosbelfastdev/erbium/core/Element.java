@@ -8,9 +8,11 @@ import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
+import java.util.Set;
 
 import static com.github.marcosbelfastdev.erbium.core.Timer.sleep;
+import static java.util.Objects.isNull;
 
 
 public class Element {
@@ -21,32 +23,40 @@ public class Element {
 	By _locator;
 	WebElement _webElement;
 	private PlaybackOptions _playbackOptions;
+	private StopWatch stopWatch;
 
 	// Somehow volatile fields
-	private String $window;
+	private String _window;
 	private String $startWindowHandle;
 	private final List<String> $knownWindowHandles = new ArrayList<>();
 
 	// other properties
 	String _elementName;
 
-	public Element() {
+	public Element(By by) {
+		setStopWatch();
+		setLocator(by);
 		setPlaybackOptions();
+	}
+
+	private void setStopWatch() {
+		this.stopWatch = new StopWatch();
+	}
+
+	private void setLocator(By by) {
+		_locator = by;
 	}
 
 	private void setPlaybackOptions() {
 		_playbackOptions = new PlaybackOptions();
 	}
 
-
 	public void setElementName(String name) {
 		_elementName = name;
 	}
 
-	private Driver getDriver() {
-		return _driver;
-	}
 
+	@SuppressWarnings("all")
 	public String getName() {
 
 		/*
@@ -94,10 +104,9 @@ public class Element {
 	}
 
 
-	public PlaybackOptions getOptions() {
-		return _playbackOptions;
+	public Map<Common, Object> getOptions() {
+		return _playbackOptions.getOptions();
 	}
-
 
 	public Element setOption(Common option, Object value) {
 		_playbackOptions.setOption(option, value);
@@ -198,7 +207,7 @@ public class Element {
         try {
 			if (isExecutorEnabled()) {
 				/* If javascript is required or element is not visible nor enabled */
-				if (requiresExecutorClick() || !isEnabled() || !isDisplayed()) {
+				if (requiresExecutorClick() || isDisabled() || !isDisplayed()) {
 					/* Or if */
 					if ((!requiresExecutorClick() && shouldFallbackToExecutor()) || requiresExecutorClick()) {
 						new JsClick().run();
@@ -231,14 +240,13 @@ public class Element {
 	}
 
 	void startPoint() {
-		//_driver.frameworkSettingsProtection();
-		Timer delayToInteract = new Timer(getDelayToInteractBefore());
+		stopWatch.reset();
 		startPointWindowLocking();
 		handleDiplayedStatus();
 		handleEnabledStatus();
 		handleAutoScrolling();
 		handleHighlight();
-		handleDelayToInteract(delayToInteract.elapsedTime());
+		handleDelayToInteract(stopWatch.elapsedTime());
 	}
 
 	private void startPointWindowLocking() {
@@ -248,9 +256,9 @@ public class Element {
 		// set a window if null
 
 		if (shouldLockToWindow()) {
-			if ($window!=null) {
+			if (isNull(_window)) {
 				try {
-					_driver.getWrappedWebDriver().switchTo().window($window);
+					_driver.getWrappedWebDriver().switchTo().window(_window);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
@@ -271,22 +279,20 @@ public class Element {
 	}
 
 	protected void handleHighlight() {
-		if (isDisplayed()) {
-			if (shouldHighlight()) {
+		if (isDisplayed())
+			if (shouldHighlight())
 				highlight();
-			}
-		}
 	}
 
 
 	protected void handleDelayToInteract(long elapsed) {
 		// deduct any previous delay from desired delay to interact
-		if (!shouldSuppressAllDelays())
+		if (allowDelays())
 			sleep(getDelayToInteractBefore() - elapsed);
 	}
 
 	protected void handleDelayToInteractAfter() {
-		if (!shouldSuppressAllDelays())
+		if (allowDelays())
 			Timer.sleep((long)getOption(Common.INTERACT_DELAY_AFTER));
 	}
 
@@ -296,44 +302,33 @@ public class Element {
 
 
 	void healthCheck()  {
-
-		if(_webElement == null) {
+		if(isNull(_webElement))
 			reload();
-		}
 
 		try {
 			_webElement.isDisplayed();
 		} catch (Exception e) {
 			reload();
 		}
-
 	}
 
 	// forces reload of element
 	// especially when OPT_LOAD_ON_DEMAND is on.
 	void reload()  {
-
-		PlaybackOptions options = new PlaybackOptions();
-		options.setOption(Common.RESOLVE_TIMEOUT, getResolveTimeout());
-		options.setOption(Common.RETRY_INTERVAL, getRetryInterval());
-
-		Finder finder = new Finder();
-		finder.setFinderOptions(options);
-		try {
-			_webElement = finder.findElement(_driver, _locator);
-		} catch (Exception ignore) {
-
+		if (isNull(_webElement))
+			_webElement = _driver.getWrappedWebDriver().findElement(_locator);
+		else {
+			List<WebElement> _webElements =_driver.getWrappedWebDriver().findElements(_locator);
+			if (_webElements.size() > 0)
+				_webElement = _webElements.get(0);
 		}
 
-		if(shouldLockToWindow()) {
-			if ($window == null) {
-				lockToWindow();
-			}
-		}
+		if (isNull(_window))
+			lockToWindow();
 	}
 
 	public String getHomeWindow() {
-		return $window;
+		return _window;
 	}
 
 	protected void handleDiplayedStatus() {
@@ -358,7 +353,7 @@ public class Element {
 	}
 
 	protected void handleEnabledStatus() {
-		if (requiresElementEnabled() && !isEnabled()) {
+		if (requiresElementEnabled() && isDisabled()) {
 			WebDriverWait waitEnabled = new WebDriverWait(_driver.getWrappedWebDriver(),
 										(long) getElementEnabledTimeout() / 1000, getRetryInterval());
 			waitEnabled.until(ExpectedConditions.elementToBeClickable(_webElement));
@@ -374,16 +369,13 @@ public class Element {
 	}
 
 	void exitPoint() {
-
 		handleDelayToInteractAfter();
 		switchToNewWindowOpened();
-
 	}
 
 	public void closeForeignWindows() {
 
 		List<String> windows = new ArrayList<>(_driver.getWrappedWebDriver().getWindowHandles());
-		//windows.addAll($drivers[$d].getWindowHandles());
 		int attempts = 0;
 
 		do {
@@ -392,7 +384,7 @@ public class Element {
 			// are opened quickly
 			attempts += 1;
 			for (String windowHandle : windows) {
-				if (!windowHandle.equals($window))
+				if (!windowHandle.equals(_window))
 					try {
 						_driver.getWrappedWebDriver().switchTo().window(windowHandle);
 						_driver.getWrappedWebDriver().close();
@@ -404,13 +396,13 @@ public class Element {
 
 		} while (windows.size() > 1 && attempts <= 50);
 
-		_driver.getWrappedWebDriver().switchTo().window($window);
+		_driver.getWrappedWebDriver().switchTo().window(_window);
 
 	}
 
 	public void closeWindow() {
 		try {
-			_driver.getWrappedWebDriver().switchTo().window($window);
+			_driver.getWrappedWebDriver().switchTo().window(_window);
 			_driver.getWrappedWebDriver().close();
 			_driver.frameworkSettingsProtection();
 		} catch (Exception ignore) {
@@ -418,39 +410,13 @@ public class Element {
 	}
 
 	private void switchToNewWindowOpened() {
-
-		if(!shouldControlWindows())
-			return;
-
-
-		for (String windowHandle : _driver.getWebDriver().getWindowHandles()) {
-
-			if (!windowHandle.equals($startWindowHandle)) {
-				if (!$knownWindowHandles.contains(windowHandle)) {
-					unhighlight(); // just not to leave element highlighted as we come back to this window
-					_driver.getWebDriver().switchTo().window(windowHandle);
-					log(Reporting.LOG_WINDOWS_ACTIONS, "Switched to a new window opened.");
-					log(Reporting.LOG_WINDOWS_ACTIONS, "Window handle is " + windowHandle);
-					break; // by criterion: move to first opened window
-				}
-			}
-		}
-
-		$knownWindowHandles.clear();
-	}
-
-	private void frameHealthCheck() {
-
-		if($frame != null) {
-			EElement frameEElement = $frame.getEElement();
-			_driver.getWebDriver().switchTo().defaultContent();
-			frameEElement.healthCheck();
-			frameEElement.jsScroll();
-			if(frameEElement.shouldHighlightFrames())
-				frameEElement.highlight();
-			_driver.getWebDriver().switchTo().frame(frameEElement.getWebElement());
-
-		}
+//		try {
+//			Set<String> windows = _driver.getWindowHandles();
+//			windows.remove(_window);
+//			_driver.getWrappedWebDriver().switchTo().window(_newWindowOrder);
+//		} catch (Exception ignored) {
+//
+//		}
 	}
 
 	private boolean shouldHighlightFrames() {
@@ -462,18 +428,10 @@ public class Element {
 	}
 
 	public void hide() {
-
-		if (!isExecutorEnabled())
-			return;
-
 		boolean suppressDelays = (boolean) getOption(Common.SUPPRESS_DELAYS);
-
 		setOption(Common.SUPPRESS_DELAYS, true);
 		startPoint();
-
 		jsHide();
-		log(Reporting.LOG_TEST_STEPS, "Element " + getName() + " has been hidden.");
-
 		setOption(Common.SUPPRESS_DELAYS, suppressDelays);
 		exitPoint();
 	}
@@ -482,18 +440,17 @@ public class Element {
 		_driver.executeScript("arguments[0].style.display = \"none\";", _webElement);
 	}
 
-    public EElement dragAndDrop(By by) {
-		EElement element = new EElement(_driver, by);
+    public Element dragAndDrop(By by) {
+		Element element = new Element(by);
         return dragAndDrop(element);
     }
 
-    public EElement dragAndDrop(EElement target) {
+    public Element dragAndDrop(Element target) {
 	    startPoint();
 		target.startPoint();
-        new Actions(_driver.getWebDriver()).dragAndDrop(this.getWrappedWebElement(), target.getWebElement()).perform();
+        new Actions(_driver.getWrappedWebDriver()).dragAndDrop(this.getWrappedWebElement(), target.getWrappedWebElement()).perform();
         target.exitPoint();
 	    exitPoint();
-	    log(Reporting.LOG_TEST_STEPS, "Element " + getName() + " was dropped onto element " + target.getName());
         return this;
     }
 
@@ -509,10 +466,6 @@ public class Element {
 		_driver.executeScript("arguments[0].value = '" + value + "';", _webElement);
 	}
 
-	void logInterception(String text) {
-		log(Reporting.LOG_TEST_STEPS, text);
-	}
-
 	private boolean requireExecutorClear() {
 		return (boolean) getOption(Common.EXECUTOR_CLEAR);
 	}
@@ -521,7 +474,7 @@ public class Element {
 		return (boolean) getOption(Common.EXECUTOR_SETTEXT);
 	}
 
-	public EElement setPassword(String text) {
+	public Element setPassword(String text) {
 		String encText;
 		if((boolean) getOption(Common.HIDE_PASSWORDS))
 			encText = "******";
@@ -537,19 +490,14 @@ public class Element {
 			}
 		} else {
 			String message = "SetPassword() requires Javascript, which has been disabled.";
-			log(Reporting.LOG_TEST_STEPS, message);
-			screenshot(ScreenshotPoint.Error);
 		}
 		healthCheck();
 		// if Javascript is enforced or we know beforehand
 		// element is disabled or not visible (therefore Javascript fallback)
 		try {
-			if ((requireExecutorSetText() || !isDisplayed() || !isEnabled())
+			if ((requireExecutorSetText() || !isDisplayed() || isDisabled())
 					|| ((!requireExecutorSetText() && shouldFallbackToExecutor()))) {
-				screenshot(ScreenshotPoint.Before);
 				jsSetValue(text);
-				log(Reporting.LOG_TEST_STEPS, logText);
-				screenshot(ScreenshotPoint.After);
 				exitPoint();
 				return this;
 			}
@@ -557,29 +505,22 @@ public class Element {
 			// nor required due to element not enabled or visible
 			if (!requireExecutorSetText()) {
 				try {
-					screenshot(ScreenshotPoint.Before);
 					_webElement.sendKeys(text);
-					log(Reporting.LOG_TEST_STEPS, logText);
 				} catch (Exception e) {
 					// fallback to javascript
 					if (shouldFallbackToExecutor()) {
-						screenshot(ScreenshotPoint.Before);
 						jsSetValue(text);
-						log(Reporting.LOG_TEST_STEPS, logText);
-						screenshot(ScreenshotPoint.After);
 					}
 				}
 			}
 		} catch (Exception e) {
 			String message = "An error occurred trying to enter password on " + getName();
-			log(Reporting.LOG_TEST_STEPS, message);
-			screenshot(ScreenshotPoint.Error);
 		}
 		exitPoint();
 		return this;
 	}
 
-	public EElement clear() {
+	public Element clear() {
 		String logText = "Cleared text on " + getName();
 		try {
 			if ((requireExecutorClear() || !_webElement.isDisplayed() || !_webElement.isEnabled())
@@ -595,11 +536,8 @@ public class Element {
 					}
 				}
 			}
-			log(Reporting.LOG_TEST_STEPS, logText);
 		} catch (Exception e) {
 			String message = "An error occurred trying to clear text on " + getName();
-			log(Reporting.LOG_TEST_STEPS, message);
-			screenshot(ScreenshotPoint.Error);
 		}
 		return this;
 	}
@@ -612,11 +550,10 @@ public class Element {
 		setOption(Common.ENABLE_SCREENSHOTS, false);
 	}
 
-	public EElement setText(String text) {
+	public Element setText(String text) {
 		String logText = "Entered data '" + text + "' in " + getName();
 		class JsSetValue {
 			void run() {
-				screenshot(ScreenshotPoint.Before);
 				healthCheck();
 				try {
 					jsSetValue(text);
@@ -625,14 +562,11 @@ public class Element {
 					healthCheck();
 					jsSetValue(text);
 				}
-				log(Reporting.LOG_TEST_STEPS, logText);
-				screenshot(ScreenshotPoint.After);
 				exitPoint();
 			}
 		}
 		class SendKeys {
 			void run()  {
-				screenshot(ScreenshotPoint.Before);
 				healthCheck();
 				try {
 					_webElement.sendKeys(text);
@@ -641,16 +575,12 @@ public class Element {
 					healthCheck();
 					_webElement.sendKeys(text);
 				}
-				log(Reporting.LOG_TEST_STEPS, logText);
-				screenshot(ScreenshotPoint.After);
 				exitPoint();
 			}
 		}
 		class SetTextError {
 			void run(Exception e) {
 				String message = "An error occurred trying to enter data on " + getName();
-				log(Reporting.LOG_TEST_STEPS, message);
-				screenshot(ScreenshotPoint.Error);
 				e.printStackTrace();
 			}
 		}
@@ -658,7 +588,7 @@ public class Element {
 		// if Javascript is enforced or we know beforehand
 		// element is disabled or not visible (therefore Javascript fallback)
 		try {
-			if ((requireExecutorSetText() || !isDisplayed() || !isEnabled())
+			if ((requireExecutorSetText() || !isDisplayed() || isDisabled())
 					|| ((!requireExecutorSetText() && shouldFallbackToExecutor()) && isExecutorEnabled())) {
 				new JsSetValue().run();
 				return this;
@@ -683,72 +613,61 @@ public class Element {
 		return this;
 	}
 
-	protected EElement jsScroll() {
-		if (!isExecutorEnabled())
-			return this;
-		try {
-			_driver.executeScript("arguments[0].scrollIntoView({behavior: \"smooth\", block: \"center\"});", _webElement);
-			int delay = (int) getOption(Common.SCROLL_DELAY_AFTER);
-			if (!shouldSuppressAllDelays() && delay > 0) {
-				try {
-					Thread.sleep(delay);
-					healthCheck();
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		} catch (ElementNotInteractableException ignore) {}
+	protected Element jsScroll() {
+		_driver.executeScript("arguments[0].scrollIntoView({behavior: \"smooth\", block: \"center\"});", _webElement);
+		if (allowDelays())
+			StopWatch.sleep((long)getOption(Common.SCROLL_DELAY_AFTER));
 		return this;
 	}
 
-	public EElement scrollDown() {
-		return scroll();
-	}
-
-	EElement scroll() {
-		return scroll(SearchScroll.SCROLL_TO_TOP_FIRST, SearchScroll.SCROLL_FACTOR);
-	}
-
-	EElement scroll(SearchScroll direction, SearchScroll options) {
-		if (!isExecutorEnabled())
-			return this;
-
-		double searchScrollFactor = (double) getOption(Common.SEARCHSCROLL_FACTOR);
-		int searchScrollHeight = (int) getOption(Common.SEARCHSCROLL_HEIGHT);
-		int searchScrollDelay = (int) getOption(Common.SEARCHSCROLL_RESOLVE);
-		int signal = (direction == SearchScroll.SCROLL_DOWN || direction == SearchScroll.SCROLL_TO_TOP_FIRST) ? 1 : -1;
-		int offset = (options == SearchScroll.SCROLL_FACTOR)
-				? (int) ((double) _driver.getWebDriver().manage().window().getSize().height * searchScrollFactor)
-				: searchScrollHeight;
-		if (direction == SearchScroll.SCROLL_TO_TOP_FIRST)
-			_driver.executeScript("window.scrollTo(0,0);");
-		long start = System.currentTimeMillis();
-		long elapsed = 0;
-		WebElement webElement = null;
-		while (elapsed < getSearchScrollTimeout()) {
-			try {
-				screenshot(ScreenshotPoint.Before);
-				try {
-					if (_webElement.isDisplayed()) {
-						break;
-					}
-				} catch (Exception ignore) {}
-				for (int i = 0; i <= offset; i = i + 7) {
-					_driver.executeScript("window.scrollBy(0, " + 7 * signal + ");");
-				}
-				try {
-					webElement = new WebDriverWait(_driver.getWebDriver(), searchScrollDelay, getRetryInterval())
-							             .until(ExpectedConditions.presenceOfElementLocated(_locator));
-				} catch (Exception ignore) {}
-				screenshot(ScreenshotPoint.After);
-				if (webElement != null) {
-					_webElement = webElement;
-				}
-			} catch (Exception ignore) {}
-			elapsed = System.currentTimeMillis() - start;
-		}
-		return this;
-	}
+//	public Element scrollDown() {
+//		return scroll();
+//	}
+//
+//	Element scroll() {
+//		return scroll(SearchScroll.SCROLL_TO_TOP_FIRST, SearchScroll.SCROLL_FACTOR);
+//	}
+//
+//	EElement scroll(SearchScroll direction, SearchScroll options) {
+//		if (!isExecutorEnabled())
+//			return this;
+//
+//		double searchScrollFactor = (double) getOption(Common.SEARCHSCROLL_FACTOR);
+//		int searchScrollHeight = (int) getOption(Common.SEARCHSCROLL_HEIGHT);
+//		int searchScrollDelay = (int) getOption(Common.SEARCHSCROLL_RESOLVE);
+//		int signal = (direction == SearchScroll.SCROLL_DOWN || direction == SearchScroll.SCROLL_TO_TOP_FIRST) ? 1 : -1;
+//		int offset = (options == SearchScroll.SCROLL_FACTOR)
+//				? (int) ((double) _driver.getWebDriver().manage().window().getSize().height * searchScrollFactor)
+//				: searchScrollHeight;
+//		if (direction == SearchScroll.SCROLL_TO_TOP_FIRST)
+//			_driver.executeScript("window.scrollTo(0,0);");
+//		long start = System.currentTimeMillis();
+//		long elapsed = 0;
+//		WebElement webElement = null;
+//		while (elapsed < getSearchScrollTimeout()) {
+//			try {
+//				screenshot(ScreenshotPoint.Before);
+//				try {
+//					if (_webElement.isDisplayed()) {
+//						break;
+//					}
+//				} catch (Exception ignore) {}
+//				for (int i = 0; i <= offset; i = i + 7) {
+//					_driver.executeScript("window.scrollBy(0, " + 7 * signal + ");");
+//				}
+//				try {
+//					webElement = new WebDriverWait(_driver.getWebDriver(), searchScrollDelay, getRetryInterval())
+//							             .until(ExpectedConditions.presenceOfElementLocated(_locator));
+//				} catch (Exception ignore) {}
+//				screenshot(ScreenshotPoint.After);
+//				if (webElement != null) {
+//					_webElement = webElement;
+//				}
+//			} catch (Exception ignore) {}
+//			elapsed = System.currentTimeMillis() - start;
+//		}
+//		return this;
+//	}
 
 	public Object getOption(Common option) {
 		Object value;
@@ -760,35 +679,33 @@ public class Element {
 		return value;
 	}
 
-	public EElement scrollUp() {
-		return scroll(EDriver.SearchScroll.SCROLL_UP, EDriver.SearchScroll.SCROLL_FACTOR);
-	}
+//	public EElement scrollUp() {
+//		return scroll(EDriver.SearchScroll.SCROLL_UP, EDriver.SearchScroll.SCROLL_FACTOR);
+//	}
 
-	public boolean isImageLoaded() {
-		long start = System.nanoTime();
-		boolean isDisplayed = false;
-		do {
-			isDisplayed = (boolean) _driver.executeScript("return arguments[0].complete " + "" +
-					                                                   "&& typeof arguments[0].naturalWidth != \"undefined\" && arguments[0].naturalWidth > 0", _webElement);
-		} while ((System.nanoTime() - start) / Math.pow(10, 6) < (int) getOption(Common.VISIBLE_TIMEOUT));
-		if(isDisplayed)
-			log(Reporting.LOG_TEST_STEPS, "Image " + getName() + " was found.");
-		else
-			log(Reporting.LOG_TEST_STEPS, "Image " + getName() + " was not found.");
-		return isDisplayed;
-	}
+//	public boolean isImageLoaded() {
+//		long start = System.nanoTime();
+//		boolean isDisplayed = false;
+//		do {
+//			isDisplayed = (boolean) _driver.executeScript("return arguments[0].complete " + "" +
+//					                                                   "&& typeof arguments[0].naturalWidth != \"undefined\" && arguments[0].naturalWidth > 0", _webElement);
+//		} while ((System.nanoTime() - start) / Math.pow(10, 6) < (int) getOption(Common.VISIBLE_TIMEOUT));
+//		if(isDisplayed)
+//			log(Reporting.LOG_TEST_STEPS, "Image " + getName() + " was found.");
+//		else
+//			log(Reporting.LOG_TEST_STEPS, "Image " + getName() + " was not found.");
+//		return isDisplayed;
+//	}
 
-	protected EElement highlight(HighlightOptions... options) {
+	protected Element highlight(HighlightOptions... options) {
 		return highlight(getHighLightStyle(), options); //  deepskyblue border-radius: 1px;
 	}
 
-	public EElement highlight() {
+	public Element highlight() {
 		return highlight(null, null);
 	}
 
-	public EElement highlight(String style, HighlightOptions... options) {
-		if (!isExecutorEnabled())
-			return this;
+	public Element highlight(String style, HighlightOptions... options) {
 		if (style == null)
 			style = getHighLightStyle();
 		//process highlight options
@@ -806,7 +723,7 @@ public class Element {
 		_driver.executeScript("arguments[0].setAttribute('style', arguments[1]);", _webElement, style);
 		if (!leaveHighlighted)
 			setLastElementHighlighted(_webElement);
-		if (getAfterHighlightDelay() > 0 && !shouldSuppressAllDelays()) {
+		if (getAfterHighlightDelay() > 0 && allowDelays()) {
 			try {
 				Thread.sleep(getAfterHighlightDelay());
 				healthCheck();
@@ -822,8 +739,6 @@ public class Element {
 	}
 
 	void unhighlight() {
-		if (!isExecutorEnabled())
-			return;
 		try {
 			if (getLastElementHighlighted() != null)
 				_driver.executeScript("arguments[0].setAttribute('style', arguments[1]);",
@@ -835,8 +750,8 @@ public class Element {
 		return (int) getOption(Common.HIGHLIGHT_DELAY_AFTER);
 	}
 
-	private boolean shouldSuppressAllDelays() {
-		return (boolean) getOption(Common.SUPPRESS_DELAYS);
+	private boolean allowDelays() {
+		return !((boolean) getOption(Common.SUPPRESS_DELAYS));
 	}
 
 	private WebElement getLastElementHighlighted() {
@@ -850,37 +765,31 @@ public class Element {
 	public void submit() {
 		startPoint();
 		_webElement.submit();
-		log(Reporting.LOG_TEST_STEPS, "A form was submitted by " + getName());
 		exitPoint();
 	}
 
 	public void load() {
 		reload();
-		log(Reporting.LOG_TEST_STEPS, "Loaded element " + getName());
 	}
 
 	public void lockToWindow() {
+		if (!shouldLockToWindow())
+			return;
 		try {
-			lockToWindow(_driver.getWebDriver().getWindowHandle());
+			lockToWindow(_driver.getWrappedWebDriver().getWindowHandle());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}
 
 	public void lockToWindow(String handle) {
-		$window = handle;
-		log(Reporting.LOG_WINDOWS_ACTIONS, "Assigned a home window to " + getName());
-		log(Reporting.LOG_WINDOWS_DETAILS, "Home window handle is " + $window);
+		_window = handle;
 	}
 
-	public EElement setFocus() {
-		if (!isExecutorEnabled()) {
-			return this;
-		}
+	public Element setFocus() {
 		startPoint();
 		healthCheck();
 		jsSetFocus();
-		log(Reporting.LOG_TEST_STEPS, "Set focus on " + getName());
 		exitPoint();
 		return this;
 	}
@@ -888,7 +797,9 @@ public class Element {
 	private void jsSetFocus() {
 		try {
 			_driver.executeScript("arguments[0].focus();", _webElement);
-		} catch (Exception ignore) {}
+		} catch (Exception ignore) {
+
+		}
 	}
 
 	public String getTagName() {
@@ -906,9 +817,9 @@ public class Element {
 		return _webElement.isSelected();
 	}
 
-	public boolean isEnabled() {
+	public boolean isDisabled() {
 		healthCheck();
-		return _webElement.isEnabled();
+		return !_webElement.isEnabled();
 	}
 
 	public String getText() {
@@ -920,35 +831,33 @@ public class Element {
 		return value;
 	}
 
-	void setWebElement(WebElement webElement) {
-		_webElement = webElement;
-	}
-
-	public EElement ifind(By locator) {
-		return _driver.ifind(locator);
-	}
-
-	public EElement find(By locator) {
-		return _driver.find(locator);
-	}
-
-	public List<EElement> findElements(By locator) {
-		healthCheck();
-		_driver.getWebDriver().manage().timeouts().implicitlyWait(getResolveTimeout(), TimeUnit.MILLISECONDS);
+	public List<Element> findElements(By locator) {
 		List<WebElement> webElements = _webElement.findElements(locator);
-		List<EElement> elements = new ArrayList<>();
-		for(WebElement current : webElements) {
-			EElement element = new EElement(_driver);
-			element.setWebElement(current);
-			elements.add(element);
-		}
-		_driver.frameworkSettingsProtection();
+		List<Element> elements = new ArrayList<>();
+		for(WebElement webElement : webElements)
+			elements.add(new Element(locator));
 		return elements;
+	}
+
+	public List<Element> minFindElements(By locator, int minElements) {
+		// TO DO
+		// Create logic to wait until a minimum number of elements exit
+		return findElements(locator);
 	}
 
 	public boolean isDisplayed() {
 		healthCheck();
 		return _webElement.isDisplayed();
+	}
+
+	public boolean isFullyDisplayed() {
+		healthCheck();
+		Rectangle rectangle = _webElement.getRect();
+		Dimension dimension = _driver.getWrappedWebDriver().manage().window().getSize();
+		return rectangle.getX() >= 0 &&
+				rectangle.getY() >= 0 &&
+				rectangle.getX() + rectangle.width <= dimension.width &&
+				rectangle.getX() + rectangle.height <= dimension.height;
 	}
 
 	public Point getLocation() {
@@ -972,11 +881,7 @@ public class Element {
 	}
 
 	public Coordinates getCoordinates() {
-		return ((Locatable) _driver.getWebDriver()).getCoordinates();
-	}
-
-	protected boolean shouldControlWindows() {
-		return (boolean) getOption(Common.WINDOW_SEARCH);
+		return ((Locatable) _driver.getWrappedWebDriver()).getCoordinates();
 	}
 
 	public enum HighlightOptions {
