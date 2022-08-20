@@ -38,9 +38,10 @@ public class DriverOptions implements IDriverOptions {
     @Override
     public void setPlaybackOptions() {
         _playbackOptions = PlaybackOptions.init();
+        _changedPlaybackOptions = new PlaybackOptions();
         setOption(Common.SCREEN_POSITION, _driver.manage().window().getPosition());
         setOption(Common.SCREEN_SIZE, _driver.manage().window().getSize());
-        _changedPlaybackOptions = new PlaybackOptions();
+
     }
 
     @Override

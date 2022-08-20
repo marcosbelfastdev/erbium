@@ -53,7 +53,7 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
             var timer = new Timer(resolve());
             while (isNull(source) && !timer.timedOut()) {
                 source = _driver.getPageSource();
-                timer.sleep(retryInterval());
+                Timer.sleep(retryInterval());
             }
             if (isNull(source))
                 end(PageSourceError.class);
