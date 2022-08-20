@@ -1,6 +1,8 @@
 package com.github.marcosbelfastdev.erbium.core;
 
 import com.github.marcosbelfastdev.erbium.exceptions.*;
+import org.openqa.selenium.Point;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
