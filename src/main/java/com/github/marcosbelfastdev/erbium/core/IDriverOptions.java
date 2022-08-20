@@ -8,7 +8,6 @@ public interface IDriverOptions {
     void setPlaybackOptions();
     DriverOptions setOption(Common common, Object option);
     Object getOption(Common playbackOption);
-    void frameworkSettingsProtection();
     DriverOptions reset();
     Boolean shouldLoad();
     Long delayBefore();

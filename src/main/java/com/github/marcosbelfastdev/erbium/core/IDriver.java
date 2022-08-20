@@ -11,8 +11,9 @@ public interface IDriver {
     public Driver get(String url);
     public String getCurrentUrl();
     public String getTitle();
-    public List<Driver> findElements(By by);
-    public Driver findElement(By by);
+    public List<Element> findElements(By by);
+    public List<Element> syncedFindElements(By by, int minElements);
+    public Element findFirstElement(By... by);
     public String getPageSource();
     public Driver close();
     public void quit();

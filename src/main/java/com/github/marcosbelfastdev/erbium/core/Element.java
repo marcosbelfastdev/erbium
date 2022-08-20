@@ -9,7 +9,6 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import static com.github.marcosbelfastdev.erbium.core.Timer.sleep;
 import static java.util.Objects.isNull;
@@ -57,7 +56,7 @@ public class Element {
 
 
 	@SuppressWarnings("all")
-	public String getName() {
+	public String getElementName() {
 
 		/*
 		Provides a short description to inform what the element is.
@@ -72,8 +71,6 @@ public class Element {
 		try {
 			if (_elementName != null)
 				return "(" + _elementName + ")";
-			if (_locator != null)
-				return "(" + _locator.toString() + ")";
 			builder.append("(");
 			builder.append(getTagName());
 			attribute = getAttribute("id");
@@ -187,7 +184,7 @@ public class Element {
 
 		class ClickError {
 			void run(Exception e) {
-				String message = "An error occurred trying to click on " + getName();
+				String message = "An error occurred trying to click on " + getElementName();
 				e.printStackTrace();
 			}
 		}
@@ -480,7 +477,7 @@ public class Element {
 			encText = "******";
 		else
 			encText = text;
-		String logText = "Entered data '" + encText + "' in " + getName();
+		String logText = "Entered data '" + encText + "' in " + getElementName();
 	    startPoint();
 		if (isExecutorEnabled()) {
 			try {
@@ -514,14 +511,14 @@ public class Element {
 				}
 			}
 		} catch (Exception e) {
-			String message = "An error occurred trying to enter password on " + getName();
+			String message = "An error occurred trying to enter password on " + getElementName();
 		}
 		exitPoint();
 		return this;
 	}
 
 	public Element clear() {
-		String logText = "Cleared text on " + getName();
+		String logText = "Cleared text on " + getElementName();
 		try {
 			if ((requireExecutorClear() || !_webElement.isDisplayed() || !_webElement.isEnabled())
 					|| ((!requireExecutorClear() && shouldFallbackToExecutor()))) {
@@ -537,7 +534,7 @@ public class Element {
 				}
 			}
 		} catch (Exception e) {
-			String message = "An error occurred trying to clear text on " + getName();
+			String message = "An error occurred trying to clear text on " + getElementName();
 		}
 		return this;
 	}
@@ -551,7 +548,7 @@ public class Element {
 	}
 
 	public Element setText(String text) {
-		String logText = "Entered data '" + text + "' in " + getName();
+		String logText = "Entered data '" + text + "' in " + getElementName();
 		class JsSetValue {
 			void run() {
 				healthCheck();
@@ -580,7 +577,7 @@ public class Element {
 		}
 		class SetTextError {
 			void run(Exception e) {
-				String message = "An error occurred trying to enter data on " + getName();
+				String message = "An error occurred trying to enter data on " + getElementName();
 				e.printStackTrace();
 			}
 		}

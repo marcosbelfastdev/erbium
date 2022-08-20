@@ -4,7 +4,7 @@ public class OptionValueTooSmall extends Throwable {
 
     public OptionValueTooSmall() {
         super(
-                "An option value cannot be negative."
+                "An option value cannot be a negative number."
         );
     }
 

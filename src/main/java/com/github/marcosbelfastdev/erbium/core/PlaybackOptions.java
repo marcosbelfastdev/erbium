@@ -32,15 +32,14 @@ class PlaybackOptions {
 		options.put(Common.RETRY_INTERVAL, 250L);
 		options.put(Common.HIGHLIGHT_ELEMENTS, true);
 		options.put(Common.HIGHLIGHT_DELAY_AFTER, 0);
-		options.put(Common.HIGHLIGHT_FRAMES, false);
 		options.put(Common.SCROLL_TO_ELEMENTS, true);
 		options.put(Common.REQUIRE_ENABLED, false);
 		options.put(Common.REQUIRE_VISIBLE, false);
 		options.put(Common.ENABLED_TIMEOUT, 10000L);
 		options.put(Common.VISIBLE_TIMEOUT, 10000L);
-		options.put(Common.EXECUTOR_CLICKS, true);
-		options.put(Common.EXECUTOR_SETTEXT, true);
-		options.put(Common.EXECUTOR_CLEAR, true);
+		options.put(Common.EXECUTOR_CLICKS, false);
+		options.put(Common.EXECUTOR_SETTEXT, false);
+		options.put(Common.EXECUTOR_CLEAR, false);
 		options.put(Common.PAGE_LOAD_TIMEOUT, 120000L); // replaces native driver pageLoadTimeout
 		options.put(Common.SUPPRESS_DELAYS, false);
 		options.put(Common.HANDLE_ALERTS, false);
@@ -51,7 +50,6 @@ class PlaybackOptions {
 		options.put(Common.SEARCHSCROLL_TIMEOUT, options.get(Common.RESOLVE_TIMEOUT));
 		options.put(Common.FALLBACK_TO_EXECUTOR, true);
 		options.put(Common.WINDOW_LOCKING, true);
-		options.put(Common.WINDOW_SEARCH, true);
 		options.put(Common.HIDE_PASSWORDS, true);
 		options.put(Common.ENABLE_SCREENSHOTS, true);
 		return new PlaybackOptions(options);
@@ -59,8 +57,12 @@ class PlaybackOptions {
 
 	public void evaluateOptionChange(Common option, Object value) {
 
-		if ((long) value < 0) {
-			end(OptionValueTooSmall.class);
+		if (value instanceof Integer ||
+			value instanceof Double ||
+			value instanceof Long ||
+			value instanceof Float)
+			if ((double) value < 0d) {
+				end(OptionValueTooSmall.class);
 		}
 
 		Common[] common = {
@@ -68,7 +70,8 @@ class PlaybackOptions {
 				Common.ENABLED_TIMEOUT,
 				Common.RETRY_INTERVAL,
 				Common.VISIBLE_TIMEOUT,
-				Common.SEARCHSCROLL_RESOLVE
+				Common.SEARCHSCROLL_RESOLVE,
+				Common.PAGE_LOAD_TIMEOUT
 		};
 
 		if (!Arrays.asList(common).contains(option)) {
@@ -77,16 +80,16 @@ class PlaybackOptions {
 
 		switch (option) {
 			case RETRY_INTERVAL:
-				if ((long) value < 20) {
+				if ((double) value < 20.0d) {
 					end(RetryIntervalTooSmall.class);
 				}
-				if ((Long) value > ((Long) _options.get(Common.RESOLVE_TIMEOUT) / 3)) {
+				if ((long) value > ((long)_options.get(Common.RESOLVE_TIMEOUT))/3) {
 					end(RetryIntervalTooBig.class);
 				}
-				if ((Long) value > ((Long) _options.get(Common.ENABLED_TIMEOUT))) {
+				if ((long) value > ((long) _options.get(Common.ENABLED_TIMEOUT))) {
 					end(RetryIntervalTooBig.class);
 				}
-				if ((Long) value > ((Long) _options.get(Common.VISIBLE_TIMEOUT))) {
+				if ((long) value > ((long) _options.get(Common.VISIBLE_TIMEOUT))) {
 					end(RetryIntervalTooBig.class);
 				}
 				break;
@@ -117,6 +120,11 @@ class PlaybackOptions {
 			case SEARCHSCROLL_RESOLVE:
 				if ((long) value < 1) {
 					end(SearchScrollTimeoutTooSmall.class);
+				}
+				break;
+			case PAGE_LOAD_TIMEOUT:
+				if ((long) value < (long) _options.get(Common.RESOLVE_TIMEOUT)) {
+					end(PageLoadTimeoutTooSmall.class);
 				}
 				break;
 		}

@@ -1,7 +1,10 @@
 package com.github.marcosbelfastdev.erbium.core;
 
 import com.github.marcosbelfastdev.erbium.exceptions.PageSourceError;
+import com.github.marcosbelfastdev.erbium.exceptions.SyncedFindElementsError;
 import org.openqa.selenium.*;
+
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 
@@ -36,12 +39,51 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
     }
 
     @Override
-    public List<Driver> findElements(By by) {
-        return null;
+    public List<Element> findElements(By by) {
+        List<Element> elements = new ArrayList<>();
+        List<WebElement> webElements = _driver.findElements(by);
+        for (WebElement webElement : webElements) {
+            elements.add(new Element(by));
+        }
+        return elements;
     }
 
     @Override
-    public Driver findElement(By by) {
+    public List<Element> syncedFindElements(By by, int minElements) {
+        Timer timer = new Timer(resolve());
+        List<Element> elements = new ArrayList<>();
+        while (elements.size() < minElements && !timer.timedOut()) {
+            elements = findElements(by);
+        }
+        if (elements.size() < minElements) {
+            end(SyncedFindElementsError.class);
+        }
+        return elements;
+
+    }
+
+    /**
+     * Finds the first possible element out of a list of locators
+     * @param bys
+     * @return
+     */
+    @Override
+    public Element findFirstElement(By... bys) {
+        Timer timer = new Timer(resolve());
+        List<WebElement> webElements = new ArrayList<>();
+        outter: while (!timer.timedOut()) {
+            for (By by : bys) {
+                webElements = _driver.findElements(by);
+                if (webElements.size() > 0) {
+                    break outter;
+                }
+                Timer.sleep(retryInterval());
+            }
+        }
+
+        if (webElements.size() < 1) {
+            end(SyncedFindElementsError.class);
+        }
         return null;
     }
 
@@ -58,7 +100,7 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
             if (isNull(source))
                 end(PageSourceError.class);
         } catch (Exception ignored) {
-
+            end(PageSourceError.class);
         }
         return source;
     }

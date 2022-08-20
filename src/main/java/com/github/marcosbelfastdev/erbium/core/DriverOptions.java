@@ -24,6 +24,7 @@ public class DriverOptions implements IDriverOptions {
     public WebDriver getWrappedWebDriver() {
         _driver.manage().timeouts()
                 .implicitlyWait((long) _playbackOptions.getOption(Common.CORE_SELENIUM_IMPLICITLY_WAIT), TimeUnit.MILLISECONDS);
+        _driver.manage().timeouts().pageLoadTimeout((long)_playbackOptions.getOption(Common.PAGE_LOAD_TIMEOUT), TimeUnit.MILLISECONDS);
         return _driver;
     }
 
@@ -47,7 +48,10 @@ public class DriverOptions implements IDriverOptions {
     @Override
     public DriverOptions setOption(Common playbackOption, Object value) {
         frameworkSettingsProtection();
-        _changedPlaybackOptions.setOption(playbackOption, value);
+        if (!_playbackOptions.getOptions().containsKey(playbackOption))
+           _playbackOptions.setOption(playbackOption, value);
+        else
+            _changedPlaybackOptions.setOption(playbackOption, value);
         return this;
     }
 
@@ -63,8 +67,7 @@ public class DriverOptions implements IDriverOptions {
         return value;
     }
 
-    @Override
-    public void frameworkSettingsProtection() {
+    protected void frameworkSettingsProtection() {
         try {
             if(!isNull(_driver)) {
                 _driver.manage().timeouts().pageLoadTimeout((int) getOption(Common.PAGE_LOAD_TIMEOUT), TimeUnit.MILLISECONDS);
