@@ -47,11 +47,11 @@ public class DriverOptions implements IDriverOptions {
 
     @Override
     public DriverOptions setOption(Common playbackOption, Object value) {
-        frameworkSettingsProtection();
         if (!_playbackOptions.getOptions().containsKey(playbackOption))
            _playbackOptions.setOption(playbackOption, value);
         else
             _changedPlaybackOptions.setOption(playbackOption, value);
+        frameworkSettingsProtection();
         return this;
     }
 
