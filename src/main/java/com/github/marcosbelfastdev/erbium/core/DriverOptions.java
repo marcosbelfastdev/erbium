@@ -70,9 +70,9 @@ public class DriverOptions implements IDriverOptions {
     protected void frameworkSettingsProtection() {
         try {
             if(!isNull(_driver)) {
-                _driver.manage().timeouts().pageLoadTimeout((int) getOption(Common.PAGE_LOAD_TIMEOUT), TimeUnit.MILLISECONDS);
+                _driver.manage().timeouts().pageLoadTimeout((long) getOption(Common.PAGE_LOAD_TIMEOUT), TimeUnit.MILLISECONDS);
                 _driver.manage().timeouts().implicitlyWait(0, TimeUnit.MILLISECONDS);
-                _driver.manage().timeouts().setScriptTimeout((int) getOption(Common.RESOLVE_TIMEOUT), TimeUnit.MILLISECONDS);
+                _driver.manage().timeouts().setScriptTimeout((long) getOption(Common.RESOLVE_TIMEOUT), TimeUnit.MILLISECONDS);
 
                 // restore screen size and position
                 Point position = _driver.manage().window().getPosition();
