@@ -17,8 +17,8 @@ public class DriverOptions implements IDriverOptions {
 
     public DriverOptions(WebDriver driver) {
         _driver = driver;
-        frameworkSettingsProtection();
         setPlaybackOptions();
+        frameworkSettingsProtection();
     }
 
     public WebDriver getWrappedWebDriver() {
@@ -40,9 +40,18 @@ public class DriverOptions implements IDriverOptions {
     public void setPlaybackOptions() {
         _playbackOptions = PlaybackOptions.init();
         _changedPlaybackOptions = new PlaybackOptions();
-        setOption(Common.SCREEN_POSITION, _driver.manage().window().getPosition());
-        setOption(Common.SCREEN_SIZE, _driver.manage().window().getSize());
-
+        _playbackOptions.getOptions()
+                .putIfAbsent(Common.SCREEN_POSITION,
+                        _driver.manage()
+                                .window()
+                                .getPosition()
+                );
+        _playbackOptions.getOptions()
+                .putIfAbsent(Common.SCREEN_SIZE,
+                        _driver.manage()
+                                .window()
+                                .getSize()
+                );
     }
 
     @Override
@@ -51,7 +60,19 @@ public class DriverOptions implements IDriverOptions {
            _playbackOptions.setOption(playbackOption, value);
         else
             _changedPlaybackOptions.setOption(playbackOption, value);
-        frameworkSettingsProtection();
+
+        if (playbackOption.equals(Common.SCREEN_POSITION))
+            _driver.manage().window().setPosition((Point)value);
+        if (playbackOption.equals(Common.SCREEN_SIZE))
+            _driver.manage().window().setSize((Dimension) value);
+        if (playbackOption.equals(Common.FULLSCREEN)) {
+            if ((Boolean) value)
+                _driver.manage().window().fullscreen();
+            else
+                _driver.manage().window().setSize((Dimension)getOption(Common.SCREEN_SIZE));
+        }
+
+        //frameworkSettingsProtection();
         return this;
     }
 
@@ -63,6 +84,13 @@ public class DriverOptions implements IDriverOptions {
             value = _changedPlaybackOptions.getOption(playbackOption);
         else
             value = _playbackOptions.getOption(playbackOption);
+
+        if (playbackOption.equals(Common.FULLSCREEN)) {
+            if (isNull(value)) {
+                return false;
+            }
+
+        }
 
         return value;
     }
@@ -100,9 +128,6 @@ public class DriverOptions implements IDriverOptions {
     public DriverOptions reset() {
         // Playback Options
         resetPlaybackOptions();
-        // Screen properties
-        _driver.manage().window().setPosition((Point) getOption(Common.SCREEN_POSITION));
-        _driver.manage().window().setSize((Dimension) getOption(Common.SCREEN_SIZE));
         // Framework settings protection in case WebDriver had been exposed
         frameworkSettingsProtection();
         return this;
