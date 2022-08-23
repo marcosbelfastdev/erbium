@@ -40,18 +40,6 @@ public class DriverOptions implements IDriverOptions {
     public void setPlaybackOptions() {
         _playbackOptions = PlaybackOptions.init();
         _changedPlaybackOptions = new PlaybackOptions();
-        _playbackOptions.getOptionsMap()
-                .putIfAbsent(Common.SCREEN_POSITION,
-                        _driver.manage()
-                                .window()
-                                .getPosition()
-                );
-        _playbackOptions.getOptionsMap()
-                .putIfAbsent(Common.SCREEN_SIZE,
-                        _driver.manage()
-                                .window()
-                                .getSize()
-                );
     }
 
     @Override
@@ -103,13 +91,17 @@ public class DriverOptions implements IDriverOptions {
                 _driver.manage().timeouts().setScriptTimeout((long) getOption(Common.RESOLVE_TIMEOUT), TimeUnit.MILLISECONDS);
 
                 // restore screen size and position
-                Point position = _driver.manage().window().getPosition();
-                if (!position.equals(getOption(Common.SCREEN_POSITION)))
-                    _driver.manage().window().setPosition((Point)getOption(Common.SCREEN_POSITION));
+                if (_playbackOptions.getOptionsMap().containsKey(Common.SCREEN_POSITION)) {
+                    Point position = _driver.manage().window().getPosition();
+                    if (!position.equals(getOption(Common.SCREEN_POSITION)))
+                        _driver.manage().window().setPosition((Point) getOption(Common.SCREEN_POSITION));
+                }
 
-                Dimension size = _driver.manage().window().getSize();
-                if (!size.equals(getOption(Common.SCREEN_SIZE)))
-                    _driver.manage().window().setSize((Dimension) getOption(Common.SCREEN_SIZE));
+                if (_playbackOptions.getOptionsMap().containsKey(Common.SCREEN_POSITION)) {
+                    Dimension size = _driver.manage().window().getSize();
+                    if (!size.equals(getOption(Common.SCREEN_SIZE)))
+                        _driver.manage().window().setSize((Dimension) getOption(Common.SCREEN_SIZE));
+                }
 
             }
         } catch (Exception ignored) {
