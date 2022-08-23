@@ -30,8 +30,8 @@ public class DriverOptions implements IDriverOptions {
 
     @Override
     public void resetPlaybackOptions() {
-        for (Common playbackOption : _changedPlaybackOptions.getOptions().keySet()) {
-            _playbackOptions.setOption(playbackOption, _changedPlaybackOptions.getOption(playbackOption));
+        for (Common playbackOption : _changedPlaybackOptions.getOptionsMap().keySet()) {
+            _changedPlaybackOptions.setOption(playbackOption, _playbackOptions.getOption(playbackOption));
             _changedPlaybackOptions.removeOption(playbackOption);
         }
     }
@@ -40,13 +40,13 @@ public class DriverOptions implements IDriverOptions {
     public void setPlaybackOptions() {
         _playbackOptions = PlaybackOptions.init();
         _changedPlaybackOptions = new PlaybackOptions();
-        _playbackOptions.getOptions()
+        _playbackOptions.getOptionsMap()
                 .putIfAbsent(Common.SCREEN_POSITION,
                         _driver.manage()
                                 .window()
                                 .getPosition()
                 );
-        _playbackOptions.getOptions()
+        _playbackOptions.getOptionsMap()
                 .putIfAbsent(Common.SCREEN_SIZE,
                         _driver.manage()
                                 .window()
@@ -56,7 +56,7 @@ public class DriverOptions implements IDriverOptions {
 
     @Override
     public DriverOptions setOption(Common playbackOption, Object value) {
-        if (!_playbackOptions.getOptions().containsKey(playbackOption))
+        if (!_playbackOptions.getOptionsMap().containsKey(playbackOption))
            _playbackOptions.setOption(playbackOption, value);
         else
             _changedPlaybackOptions.setOption(playbackOption, value);
@@ -80,7 +80,7 @@ public class DriverOptions implements IDriverOptions {
     @Override
     public Object getOption(Common playbackOption) {
         Object value;
-        if (_changedPlaybackOptions.getOptions().containsKey(playbackOption))
+        if (_changedPlaybackOptions.getOptionsMap().containsKey(playbackOption))
             value = _changedPlaybackOptions.getOption(playbackOption);
         else
             value = _playbackOptions.getOption(playbackOption);

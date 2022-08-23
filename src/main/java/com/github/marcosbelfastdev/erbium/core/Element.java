@@ -102,7 +102,7 @@ public class Element {
 
 
 	public Map<Common, Object> getOptions() {
-		return _playbackOptions.getOptions();
+		return _playbackOptions.getOptionsMap();
 	}
 
 	public Element setOption(Common option, Object value) {

@@ -1,7 +1,6 @@
 package com.github.marcosbelfastdev.erbium.core;
 
 import com.github.marcosbelfastdev.erbium.exceptions.*;
-import org.openqa.selenium.Point;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -156,7 +155,7 @@ class PlaybackOptions {
 		_options.remove(playbackOption);
 	}
 
-	protected Map<Common, Object> getOptions() {
+	protected Map<Common, Object> getOptionsMap() {
 		return _options;
 	}
 
