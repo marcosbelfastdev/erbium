@@ -1,20 +1,27 @@
 package com.github.marcosbelfastdev.erbium.core;
 
+import com.github.marcosbelfastdev.erbium.exceptions.ErrorLockingToWindow;
+import com.github.marcosbelfastdev.erbium.exceptions.NoElementFound;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.internal.Coordinates;
 import org.openqa.selenium.interactions.internal.Locatable;
 import org.openqa.selenium.support.ui.ExpectedConditions;
+import org.openqa.selenium.support.ui.FluentWait;
+import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
+import static com.github.marcosbelfastdev.erbium.core.ErrorHandling.end;
 import static com.github.marcosbelfastdev.erbium.core.Timer.sleep;
 import static java.util.Objects.isNull;
 
 
-public class Element {
+public class Element implements IElementOptions {
 
 	Driver _driver;
 	// used to track highlighted elements and unhighlight them
@@ -46,9 +53,6 @@ public class Element {
 		_locator = by;
 	}
 
-	private void setPlaybackOptions() {
-		_playbackOptions = new PlaybackOptions();
-	}
 
 	public void setElementName(String name) {
 		_elementName = name;
@@ -105,14 +109,40 @@ public class Element {
 		return _playbackOptions.getOptionsMap();
 	}
 
+	@Override
+	public void setPlaybackOptions() {
+		_playbackOptions = new PlaybackOptions();
+	}
+
 	public Element setOption(Common option, Object value) {
 		_playbackOptions.setOption(option, value);
 		return this;
 	}
 
 
-	public void reset() {
+	public Element reset() {
 		_playbackOptions = new PlaybackOptions();
+		return this;
+	}
+
+	@Override
+	public Boolean shouldLoad() {
+		return null;
+	}
+
+	@Override
+	public Long delayBefore() {
+		return null;
+	}
+
+	@Override
+	public Long resolve() {
+		return null;
+	}
+
+	@Override
+	public Long retryInterval() {
+		return null;
 	}
 
 	protected boolean isExecutorEnabled() {
@@ -132,8 +162,18 @@ public class Element {
 		return (boolean) getOption(Common.SCROLL_TO_ELEMENTS);
 	}
 
-	protected boolean shouldHighlight() {
+	public Boolean shouldHighlight() {
 		return (boolean) getOption(Common.HIGHLIGHT_ELEMENTS);
+	}
+
+	@Override
+	public Long highlightAfter() {
+		return null;
+	}
+
+	@Override
+	public Boolean shouldSuppressDelays() {
+		return null;
 	}
 
 	protected int getResolveTimeout() {
@@ -148,9 +188,6 @@ public class Element {
 		return (boolean) getOption(Common.FALLBACK_TO_EXECUTOR);
 	}
 
-	void recoverActionInterceptor() {
-
-	}
 
 	public Element click()  {
 
@@ -160,7 +197,6 @@ public class Element {
 				try {
 					jsClick();
 				} catch (Exception e) {
-					recoverActionInterceptor();
 					healthCheck();
 					jsClick();
 				}
@@ -174,7 +210,6 @@ public class Element {
 				try {
 					_webElement.click();
 				} catch (Exception e) {
-					recoverActionInterceptor();
 					healthCheck();
 					_webElement.click();
 				}
@@ -312,16 +347,7 @@ public class Element {
 	// forces reload of element
 	// especially when OPT_LOAD_ON_DEMAND is on.
 	void reload()  {
-		if (isNull(_webElement))
-			_webElement = _driver.getWrappedWebDriver().findElement(_locator);
-		else {
-			List<WebElement> _webElements =_driver.getWrappedWebDriver().findElements(_locator);
-			if (_webElements.size() > 0)
-				_webElement = _webElements.get(0);
-		}
-
-		if (isNull(_window))
-			lockToWindow();
+		load();
 	}
 
 	public String getHomeWindow() {
@@ -330,6 +356,7 @@ public class Element {
 
 	protected void handleDiplayedStatus() {
 
+		load();
 		if (requiresElementVisible() && !isDisplayed()) {
 			WebDriverWait waitVisible = new WebDriverWait(_driver.getWrappedWebDriver(),
 										(long) getElementVisibleTimeout() / 1000, getRetryInterval());
@@ -555,7 +582,6 @@ public class Element {
 				try {
 					jsSetValue(text);
 				} catch (Exception e) {
-					recoverActionInterceptor();
 					healthCheck();
 					jsSetValue(text);
 				}
@@ -568,7 +594,6 @@ public class Element {
 				try {
 					_webElement.sendKeys(text);
 				} catch (Exception e) {
-					recoverActionInterceptor();
 					healthCheck();
 					_webElement.sendKeys(text);
 				}
@@ -694,39 +719,14 @@ public class Element {
 //		return isDisplayed;
 //	}
 
-	protected Element highlight(HighlightOptions... options) {
-		return highlight(getHighLightStyle(), options); //  deepskyblue border-radius: 1px;
-	}
-
 	public Element highlight() {
-		return highlight(null, null);
-	}
-
-	public Element highlight(String style, HighlightOptions... options) {
-		if (style == null)
-			style = getHighLightStyle();
-		//process highlight options
-		boolean leaveHighlighted = false;
-		if (options != null) {
-			for (HighlightOptions option : options) {
-				if (option == HighlightOptions.DoNotUnhighlight) {
-					leaveHighlighted = true;
-					break;
-				}
-			}
-		}
 		unhighlight();
 		this.healthCheck();
-		_driver.executeScript("arguments[0].setAttribute('style', arguments[1]);", _webElement, style);
-		if (!leaveHighlighted)
-			setLastElementHighlighted(_webElement);
+		_driver.executeScript("arguments[0].setAttribute('style', arguments[1]);", _webElement, getHighLightStyle());
+		stopWatch.reset();
+		_lastElementHighlighted = _webElement;
 		if (getAfterHighlightDelay() > 0 && allowDelays()) {
-			try {
-				Thread.sleep(getAfterHighlightDelay());
-				healthCheck();
-			} catch (InterruptedException e) {
-				e.printStackTrace();
-			}
+			Timer.sleep(getAfterHighlightDelay() - stopWatch.elapsedTime());
 		}
 		return this;
 	}
@@ -766,21 +766,39 @@ public class Element {
 	}
 
 	public void load() {
-		reload();
+		if (isNull(_webElement)) {
+			Wait<WebDriver> wait = new FluentWait<WebDriver>(_driver.getWrappedWebDriver())
+					.withTimeout(resolve(), TimeUnit.MILLISECONDS)
+					.pollingEvery(retryInterval(), TimeUnit.MILLISECONDS)
+					.ignoring(NoSuchElementException.class);
+
+			_webElement = wait.until(new Function<WebDriver, WebElement>() {
+				public WebElement apply(WebDriver driver) {
+					return driver.findElement(_locator);
+				}
+			});
+		}
+
+		if (isNull(_webElement))
+			end(NoElementFound.class);
+
+		if (isNull(_window))
+			lockToWindow();
 	}
 
 	public void lockToWindow() {
 		if (!shouldLockToWindow())
 			return;
 		try {
-			lockToWindow(_driver.getWrappedWebDriver().getWindowHandle());
+			setHomeWindow(_driver.getWindowHandle());
 		} catch (Exception e) {
-			e.printStackTrace();
+			end(ErrorLockingToWindow.class);
 		}
 	}
 
-	public void lockToWindow(String handle) {
+	private Element setHomeWindow(String handle) {
 		_window = handle;
+		return this;
 	}
 
 	public Element setFocus() {

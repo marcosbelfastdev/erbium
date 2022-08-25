@@ -3,10 +3,14 @@ package com.github.marcosbelfastdev.erbium.core;
 import com.github.marcosbelfastdev.erbium.exceptions.PageSourceError;
 import com.github.marcosbelfastdev.erbium.exceptions.SyncedFindElementsError;
 import org.openqa.selenium.*;
+import org.openqa.selenium.support.ui.FluentWait;
+import org.openqa.selenium.support.ui.Wait;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 
 import static com.github.marcosbelfastdev.erbium.core.ErrorHandling.end;
 import static java.util.Objects.isNull;
@@ -36,6 +40,13 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
     @Override
     public String getTitle() {
         return _driver.getTitle();
+    }
+
+    public Element findElement(By by) {
+        // Waiting 30 seconds for an element to be present on the page, checking
+        // for its presence once every 5 seconds.
+
+
     }
 
     @Override

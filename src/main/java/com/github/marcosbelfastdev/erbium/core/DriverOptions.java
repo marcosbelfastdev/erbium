@@ -22,9 +22,6 @@ public class DriverOptions implements IDriverOptions {
     }
 
     public WebDriver getWrappedWebDriver() {
-        _driver.manage().timeouts()
-                .implicitlyWait((long) _playbackOptions.getOption(Common.CORE_SELENIUM_IMPLICITLY_WAIT), TimeUnit.MILLISECONDS);
-        _driver.manage().timeouts().pageLoadTimeout((long)_playbackOptions.getOption(Common.PAGE_LOAD_TIMEOUT), TimeUnit.MILLISECONDS);
         return _driver;
     }
 
@@ -48,19 +45,7 @@ public class DriverOptions implements IDriverOptions {
            _playbackOptions.setOption(playbackOption, value);
         else
             _changedPlaybackOptions.setOption(playbackOption, value);
-
-        if (playbackOption.equals(Common.SCREEN_POSITION))
-            _driver.manage().window().setPosition((Point)value);
-        if (playbackOption.equals(Common.SCREEN_SIZE))
-            _driver.manage().window().setSize((Dimension) value);
-        if (playbackOption.equals(Common.FULLSCREEN)) {
-            if ((Boolean) value)
-                _driver.manage().window().fullscreen();
-            else
-                _driver.manage().window().setSize((Dimension)getOption(Common.SCREEN_SIZE));
-        }
-
-        //frameworkSettingsProtection();
+        frameworkSettingsProtection();
         return this;
     }
 
@@ -72,14 +57,6 @@ public class DriverOptions implements IDriverOptions {
             value = _changedPlaybackOptions.getOption(playbackOption);
         else
             value = _playbackOptions.getOption(playbackOption);
-
-        if (playbackOption.equals(Common.FULLSCREEN)) {
-            if (isNull(value)) {
-                return false;
-            }
-
-        }
-
         return value;
     }
 
@@ -89,20 +66,6 @@ public class DriverOptions implements IDriverOptions {
                 _driver.manage().timeouts().pageLoadTimeout((long) getOption(Common.PAGE_LOAD_TIMEOUT), TimeUnit.MILLISECONDS);
                 _driver.manage().timeouts().implicitlyWait(0, TimeUnit.MILLISECONDS);
                 _driver.manage().timeouts().setScriptTimeout((long) getOption(Common.RESOLVE_TIMEOUT), TimeUnit.MILLISECONDS);
-
-                // restore screen size and position
-                if (_playbackOptions.getOptionsMap().containsKey(Common.SCREEN_POSITION)) {
-                    Point position = _driver.manage().window().getPosition();
-                    if (!position.equals(getOption(Common.SCREEN_POSITION)))
-                        _driver.manage().window().setPosition((Point) getOption(Common.SCREEN_POSITION));
-                }
-
-                if (_playbackOptions.getOptionsMap().containsKey(Common.SCREEN_POSITION)) {
-                    Dimension size = _driver.manage().window().getSize();
-                    if (!size.equals(getOption(Common.SCREEN_SIZE)))
-                        _driver.manage().window().setSize((Dimension) getOption(Common.SCREEN_SIZE));
-                }
-
             }
         } catch (Exception ignored) {
 
@@ -138,11 +101,6 @@ public class DriverOptions implements IDriverOptions {
     @Override
     public Long resolve() {
         return (Long) getOption(Common.RESOLVE_TIMEOUT);
-    }
-
-    @Override
-    public Long coreImplicitly() {
-        return (Long) getOption(Common.CORE_SELENIUM_IMPLICITLY_WAIT);
     }
 
     @Override

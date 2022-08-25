@@ -12,7 +12,6 @@ public interface IDriverOptions {
     Boolean shouldLoad();
     Long delayBefore();
     Long resolve();
-    Long coreImplicitly();
     Long retryInterval();
     Boolean shouldHighlight();
     Long highlightAfter();
