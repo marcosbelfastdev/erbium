@@ -4,7 +4,7 @@ apply plugin: 'maven'
 buildscript {
     repositories {
         mavenCentral()
-//        maven { url "https://jitpack.io" }
+        maven { url "https://jitpack.io" }
     }
 }
 
@@ -18,9 +18,11 @@ group = 'com.github.marcosbelfastdev'
 sourceCompatibility = 1.11 // java 8
 targetCompatibility = 1.11
 
-repositories {
-    mavenCentral()
-    maven { url "https://jitpack.io" }
+allprojects {
+    repositories {
+        mavenCentral()
+        maven { url "https://jitpack.io" }
+    }
 }
 
 
