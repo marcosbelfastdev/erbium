@@ -42,12 +42,12 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
         return _driver.getTitle();
     }
 
-    public Element findElement(By by) {
-        // Waiting 30 seconds for an element to be present on the page, checking
-        // for its presence once every 5 seconds.
-
-
-    }
+//    public Element findElement(By by) {
+//        // Waiting 30 seconds for an element to be present on the page, checking
+//        // for its presence once every 5 seconds.
+//
+//
+//    }
 
     @Override
     public List<Element> findElements(By by) {

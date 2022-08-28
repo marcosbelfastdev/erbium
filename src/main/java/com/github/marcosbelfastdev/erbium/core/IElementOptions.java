@@ -4,9 +4,10 @@ import org.openqa.selenium.WebDriver;
 
 public interface IElementOptions {
     void setPlaybackOptions();
-    Element setOption(Common common, Object option);
+    ElementOptions setOption(Common common, Object option);
     Object getOption(Common playbackOption);
-    Element reset();
+    ElementOptions reset();
+    ElementOptions resetOptions();
     Boolean shouldLoad();
     Long delayBefore();
     Long resolve();

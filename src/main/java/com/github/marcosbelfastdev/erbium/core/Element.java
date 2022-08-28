@@ -21,41 +21,32 @@ import static com.github.marcosbelfastdev.erbium.core.Timer.sleep;
 import static java.util.Objects.isNull;
 
 
-public class Element implements IElementOptions {
+public class Element extends ElementOptions {
 
-	Driver _driver;
-	// used to track highlighted elements and unhighlight them
-	private WebElement _lastElementHighlighted;
-	By _locator;
-	WebElement _webElement;
-	private PlaybackOptions _playbackOptions;
-	private StopWatch stopWatch;
-
-	// Somehow volatile fields
-	private String _window;
-	private String $startWindowHandle;
-	private final List<String> $knownWindowHandles = new ArrayList<>();
-
-	// other properties
-	String _elementName;
 
 	public Element(By by) {
-		setStopWatch();
-		setLocator(by);
-		setPlaybackOptions();
+		super(by);
 	}
 
-	private void setStopWatch() {
-		this.stopWatch = new StopWatch();
+	void healthCheck()  {
+		if(isNull(_webElement))
+			load();
+
+		try {
+			_webElement.getSize();
+		} catch (Exception e) {
+			reload();
+		}
 	}
 
-	private void setLocator(By by) {
-		_locator = by;
+	public String getTagName() {
+		healthCheck();
+		return _webElement.getTagName();
 	}
 
-
-	public void setElementName(String name) {
-		_elementName = name;
+	public String getAttribute(String s) {
+		healthCheck();
+		return _webElement.getAttribute(s);
 	}
 
 
@@ -73,8 +64,8 @@ public class Element implements IElementOptions {
 		StringBuilder builder = new StringBuilder();
 		String attribute;
 		try {
-			if (_elementName != null)
-				return "(" + _elementName + ")";
+			if (_name != null)
+				return "(" + _name + ")";
 			builder.append("(");
 			builder.append(getTagName());
 			attribute = getAttribute("id");
@@ -94,100 +85,6 @@ public class Element implements IElementOptions {
 			name = "(Unnamed)";
 		return name;
 	}
-
-
-	public WebElement getWrappedWebElement() {
-		return _webElement;
-	}
-
-	public By getBy() {
-		return _locator;
-	}
-
-
-	public Map<Common, Object> getOptions() {
-		return _playbackOptions.getOptionsMap();
-	}
-
-	@Override
-	public void setPlaybackOptions() {
-		_playbackOptions = new PlaybackOptions();
-	}
-
-	public Element setOption(Common option, Object value) {
-		_playbackOptions.setOption(option, value);
-		return this;
-	}
-
-
-	public Element reset() {
-		_playbackOptions = new PlaybackOptions();
-		return this;
-	}
-
-	@Override
-	public Boolean shouldLoad() {
-		return null;
-	}
-
-	@Override
-	public Long delayBefore() {
-		return null;
-	}
-
-	@Override
-	public Long resolve() {
-		return null;
-	}
-
-	@Override
-	public Long retryInterval() {
-		return null;
-	}
-
-	protected boolean isExecutorEnabled() {
-		return true;
-	}
-
-	protected int getSearchScrollTimeout() {
-		return (int) getOption(Common.SEARCHSCROLL_TIMEOUT);
-	}
-
-	protected boolean shouldHandleAlerts() {
-		return (boolean) getOption(Common.HANDLE_ALERTS);
-	}
-
-
-	protected boolean shouldScroll() {
-		return (boolean) getOption(Common.SCROLL_TO_ELEMENTS);
-	}
-
-	public Boolean shouldHighlight() {
-		return (boolean) getOption(Common.HIGHLIGHT_ELEMENTS);
-	}
-
-	@Override
-	public Long highlightAfter() {
-		return null;
-	}
-
-	@Override
-	public Boolean shouldSuppressDelays() {
-		return null;
-	}
-
-	protected int getResolveTimeout() {
-		return (int) getOption(Common.RESOLVE_TIMEOUT);
-	}
-
-	protected boolean requiresExecutorClick() {
-		return (boolean) getOption(Common.EXECUTOR_CLICKS);
-	}
-
-	protected boolean shouldFallbackToExecutor() {
-		return (boolean) getOption(Common.FALLBACK_TO_EXECUTOR);
-	}
-
 
 	public Element click()  {
 
@@ -272,13 +169,13 @@ public class Element implements IElementOptions {
 	}
 
 	void startPoint() {
-		stopWatch.reset();
+		var sw = new StopWatch();
 		startPointWindowLocking();
 		handleDiplayedStatus();
 		handleEnabledStatus();
 		handleAutoScrolling();
 		handleHighlight();
-		handleDelayToInteract(stopWatch.elapsedTime());
+		handleDelayToInteract(sw.elapsedTime());
 	}
 
 	private void startPointWindowLocking() {
@@ -288,11 +185,11 @@ public class Element implements IElementOptions {
 		// set a window if null
 
 		if (shouldLockToWindow()) {
-			if (isNull(_window)) {
+			if (!isNull(_window)) {
 				try {
 					_driver.getWrappedWebDriver().switchTo().window(_window);
 				} catch (Exception e) {
-					e.printStackTrace();
+					end(e.getClass());
 				}
 			} else {
 				// assign a home window
@@ -333,22 +230,7 @@ public class Element implements IElementOptions {
 	}
 
 
-	void healthCheck()  {
-		if(isNull(_webElement))
-			reload();
 
-		try {
-			_webElement.isDisplayed();
-		} catch (Exception e) {
-			reload();
-		}
-	}
-
-	// forces reload of element
-	// especially when OPT_LOAD_ON_DEMAND is on.
-	void reload()  {
-		load();
-	}
 
 	public String getHomeWindow() {
 		return _window;
@@ -364,17 +246,6 @@ public class Element implements IElementOptions {
 		}
 	}
 
-	public int getRetryInterval() {
-		return (int) getOption(Common.RETRY_INTERVAL);
-	}
-
-	public boolean requiresElementVisible() {
-		return (boolean) getOption(Common.REQUIRE_VISIBLE);
-	}
-
-	public int getElementVisibleTimeout() {
-		return (int) getOption(Common.VISIBLE_TIMEOUT);
-	}
 
 	protected void handleEnabledStatus() {
 		if (requiresElementEnabled() && isDisabled()) {
@@ -384,13 +255,6 @@ public class Element implements IElementOptions {
 		}
 	}
 
-	public boolean requiresElementEnabled() {
-		return (boolean) getOption(Common.REQUIRE_ENABLED);
-	}
-
-	public int getElementEnabledTimeout() {
-		return (int) getOption(Common.ENABLED_TIMEOUT);
-	}
 
 	void exitPoint() {
 		handleDelayToInteractAfter();
@@ -443,13 +307,6 @@ public class Element implements IElementOptions {
 //		}
 	}
 
-	private boolean shouldHighlightFrames() {
-		return (boolean) getOption(Common.HIGHLIGHT_FRAMES);
-	}
-
-	private boolean shouldLockToWindow() {
-		return (boolean) getOption(Common.WINDOW_LOCKING);
-	}
 
 	public void hide() {
 		boolean suppressDelays = (boolean) getOption(Common.SUPPRESS_DELAYS);
@@ -490,13 +347,6 @@ public class Element implements IElementOptions {
 		_driver.executeScript("arguments[0].value = '" + value + "';", _webElement);
 	}
 
-	private boolean requireExecutorClear() {
-		return (boolean) getOption(Common.EXECUTOR_CLEAR);
-	}
-
-	private boolean requireExecutorSetText() {
-		return (boolean) getOption(Common.EXECUTOR_SETTEXT);
-	}
 
 	public Element setPassword(String text) {
 		String encText;
@@ -566,9 +416,6 @@ public class Element implements IElementOptions {
 		return this;
 	}
 
-	boolean isScreenshotEnabled() {
-		return (boolean) getOption(Common.ENABLE_SCREENSHOTS);
-	}
 
 	void disableScreenshots() {
 		setOption(Common.ENABLE_SCREENSHOTS, false);
@@ -691,14 +538,15 @@ public class Element implements IElementOptions {
 //		return this;
 //	}
 
-	public Object getOption(Common option) {
-		Object value;
-		try {
-			value = _playbackOptions.getOption(option);
-		} catch (Exception e) {
-			value = _driver.getOption(option);
-		}
-		return value;
+	/**
+	 * Resets an element to its original state.
+	 * @return
+	 */
+	@Override
+	public Element reset() {
+		setHomeWindow(null);
+		_webElement = null;
+		return this;
 	}
 
 //	public EElement scrollUp() {
@@ -723,17 +571,14 @@ public class Element implements IElementOptions {
 		unhighlight();
 		this.healthCheck();
 		_driver.executeScript("arguments[0].setAttribute('style', arguments[1]);", _webElement, getHighLightStyle());
-		stopWatch.reset();
+		var sw = new StopWatch();
 		_lastElementHighlighted = _webElement;
 		if (getAfterHighlightDelay() > 0 && allowDelays()) {
-			Timer.sleep(getAfterHighlightDelay() - stopWatch.elapsedTime());
+			Timer.sleep(getAfterHighlightDelay() - sw.elapsedTime());
 		}
 		return this;
 	}
 
-	private String getHighLightStyle() {
-		return (String) getOption(Common.HIGHLIGHT_STYLE);
-	}
 
 	void unhighlight() {
 		try {
@@ -743,13 +588,6 @@ public class Element implements IElementOptions {
 		} catch (Exception ignored) {} // as long as it has removed the border!
 	}
 
-	private int getAfterHighlightDelay() {
-		return (int) getOption(Common.HIGHLIGHT_DELAY_AFTER);
-	}
-
-	private boolean allowDelays() {
-		return !((boolean) getOption(Common.SUPPRESS_DELAYS));
-	}
 
 	private WebElement getLastElementHighlighted() {
 		return _lastElementHighlighted;
@@ -786,6 +624,19 @@ public class Element implements IElementOptions {
 			lockToWindow();
 	}
 
+	public Element reload() {
+		if (isNull(_webElement)) {
+			load();
+		} else {
+			try {
+				_webElement = _driver.getWrappedWebDriver().findElements(_locator).get(0);
+			} catch (Exception e) {
+				end(NoElementFound.class);
+			}
+		}
+		return this;
+	}
+
 	public void lockToWindow() {
 		if (!shouldLockToWindow())
 			return;
@@ -815,16 +666,6 @@ public class Element implements IElementOptions {
 		} catch (Exception ignore) {
 
 		}
-	}
-
-	public String getTagName() {
-		healthCheck();
-		return _webElement.getTagName();
-	}
-
-	public String getAttribute(String s) {
-		healthCheck();
-		return _webElement.getAttribute(s);
 	}
 
 	public boolean isSelected() {
