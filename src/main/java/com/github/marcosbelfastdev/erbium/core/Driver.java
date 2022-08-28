@@ -60,7 +60,7 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
     }
 
     @Override
-    public List<Element> syncedFindElements(By by, int minElements) {
+    public List<Element> syncedFindElements(By by, int minElements) throws Throwable {
         Timer timer = new Timer(resolve());
         List<Element> elements = new ArrayList<>();
         while (elements.size() < minElements && !timer.timedOut()) {
@@ -79,7 +79,7 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
      * @return
      */
     @Override
-    public Element findFirstElement(By... bys) {
+    public Element findFirstElement(By... bys) throws Throwable {
         Timer timer = new Timer(resolve());
         List<WebElement> webElements = new ArrayList<>();
         outter: while (!timer.timedOut()) {
@@ -99,7 +99,7 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
     }
 
     @Override
-    public String getPageSource() {
+    public String getPageSource() throws Throwable {
         String source = null;
         try {
             source = _driver.getPageSource();
@@ -110,7 +110,7 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
             }
             if (isNull(source))
                 end(PageSourceError.class);
-        } catch (Exception ignored) {
+        } catch (Throwable ignored) {
             end(PageSourceError.class);
         }
         return source;

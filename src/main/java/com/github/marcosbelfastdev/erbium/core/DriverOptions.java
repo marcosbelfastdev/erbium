@@ -26,7 +26,7 @@ public class DriverOptions implements IDriverOptions {
     }
 
     @Override
-    public void resetPlaybackOptions() {
+    public void resetPlaybackOptions() throws Throwable {
         for (Common playbackOption : _changedPlaybackOptions.getOptionsMap().keySet()) {
             _changedPlaybackOptions.setOption(playbackOption, _playbackOptions.getOption(playbackOption));
             _changedPlaybackOptions.removeOption(playbackOption);
@@ -40,7 +40,7 @@ public class DriverOptions implements IDriverOptions {
     }
 
     @Override
-    public DriverOptions setOption(Common playbackOption, Object value) {
+    public DriverOptions setOption(Common playbackOption, Object value) throws Throwable {
         if (!_playbackOptions.getOptionsMap().containsKey(playbackOption))
            _playbackOptions.setOption(playbackOption, value);
         else
@@ -80,7 +80,7 @@ public class DriverOptions implements IDriverOptions {
      * The Selenium core implicitly wait is set to 0.
      */
     @Override
-    public DriverOptions reset() {
+    public DriverOptions reset() throws Throwable {
         // Playback Options
         resetPlaybackOptions();
         // Framework settings protection in case WebDriver had been exposed

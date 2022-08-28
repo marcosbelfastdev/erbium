@@ -12,9 +12,9 @@ public interface IDriver {
     public String getCurrentUrl();
     public String getTitle();
     public List<Element> findElements(By by);
-    public List<Element> syncedFindElements(By by, int minElements);
-    public Element findFirstElement(By... by);
-    public String getPageSource();
+    public List<Element> syncedFindElements(By by, int minElements) throws Throwable;
+    public Element findFirstElement(By... by) throws Throwable;
+    public String getPageSource() throws Throwable;
     public Driver close();
     public void quit();
     public Set<String> getWindowHandles();

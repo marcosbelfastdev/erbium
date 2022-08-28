@@ -28,7 +28,7 @@ public class Element extends ElementOptions {
 		super(driver, by);
 	}
 
-	void healthCheck()  {
+	void healthCheck() throws Throwable {
 		if(isNull(_webElement))
 			load();
 
@@ -39,12 +39,12 @@ public class Element extends ElementOptions {
 		}
 	}
 
-	public String getTagName() {
+	public String getTagName() throws Throwable {
 		healthCheck();
 		return _webElement.getTagName();
 	}
 
-	public String getAttribute(String s) {
+	public String getAttribute(String s) throws Throwable {
 		healthCheck();
 		return _webElement.getAttribute(s);
 	}
@@ -78,7 +78,7 @@ public class Element extends ElementOptions {
 			if (attribute.length() > 0)
 				builder.append(":" + attribute + "]");
 			builder.append(")");
-		} catch (Exception ignore) {}
+		} catch (Throwable ignore) {}
 
 		String name = builder.toString();
 		if(name.equals(""))
@@ -86,10 +86,10 @@ public class Element extends ElementOptions {
 		return name;
 	}
 
-	public Element click()  {
+	public Element click() throws Throwable {
 
 		class JsClick {
-			void run() {
+			void run() throws Throwable {
 				healthCheck();
 				try {
 					jsClick();
@@ -102,7 +102,7 @@ public class Element extends ElementOptions {
 		}
 
 		class Click {
-			void run()  {
+			void run() throws Throwable {
 				healthCheck();
 				try {
 					_webElement.click();
@@ -168,7 +168,7 @@ public class Element extends ElementOptions {
 
 	}
 
-	void startPoint() {
+	void startPoint() throws Throwable {
 		var sw = new StopWatch();
 		startPointWindowLocking();
 		handleDiplayedStatus();
@@ -178,7 +178,7 @@ public class Element extends ElementOptions {
 		handleDelayToInteract(sw.elapsedTime());
 	}
 
-	private void startPointWindowLocking() {
+	private void startPointWindowLocking() throws Throwable {
 
 		// Option must be active
 		// and window must have been set by reload() or lockToWindow()
@@ -199,7 +199,7 @@ public class Element extends ElementOptions {
 
 	}
 
-	protected void handleAutoScrolling() {
+	protected void handleAutoScrolling() throws Throwable {
 		if (isDisplayed()) {
 			if (shouldScroll()) {
 				jsScroll();
@@ -207,7 +207,7 @@ public class Element extends ElementOptions {
 		}
 	}
 
-	protected void handleHighlight() {
+	protected void handleHighlight() throws Throwable {
 		if (isDisplayed())
 			if (shouldHighlight())
 				highlight();
@@ -236,7 +236,7 @@ public class Element extends ElementOptions {
 		return _window;
 	}
 
-	protected void handleDiplayedStatus() {
+	protected void handleDiplayedStatus() throws Throwable {
 
 		load();
 		if (requiresElementVisible() && !isDisplayed()) {
@@ -247,7 +247,7 @@ public class Element extends ElementOptions {
 	}
 
 
-	protected void handleEnabledStatus() {
+	protected void handleEnabledStatus() throws Throwable {
 		if (requiresElementEnabled() && isDisabled()) {
 			WebDriverWait waitEnabled = new WebDriverWait(_driver.getWrappedWebDriver(),
 										(long) getElementEnabledTimeout() / 1000, getRetryInterval());
@@ -308,7 +308,7 @@ public class Element extends ElementOptions {
 	}
 
 
-	public void hide() {
+	public void hide() throws Throwable {
 		boolean suppressDelays = (boolean) getOption(Common.SUPPRESS_DELAYS);
 		setOption(Common.SUPPRESS_DELAYS, true);
 		startPoint();
@@ -321,12 +321,12 @@ public class Element extends ElementOptions {
 		_driver.executeScript("arguments[0].style.display = \"none\";", _webElement);
 	}
 
-    public Element dragAndDrop(By by) {
+    public Element dragAndDrop(By by) throws Throwable {
 		Element element = new Element(_driver, by);
         return dragAndDrop(element);
     }
 
-    public Element dragAndDrop(Element target) {
+    public Element dragAndDrop(Element target) throws Throwable {
 	    startPoint();
 		target.startPoint();
         new Actions(_driver.getWrappedWebDriver()).dragAndDrop(this.getWrappedWebElement(), target.getWrappedWebElement()).perform();
@@ -348,7 +348,7 @@ public class Element extends ElementOptions {
 	}
 
 
-	public Element setPassword(String text) {
+	public Element setPassword(String text) throws Throwable {
 		String encText;
 		if((boolean) getOption(Common.HIDE_PASSWORDS))
 			encText = "******";
@@ -410,21 +410,21 @@ public class Element extends ElementOptions {
 					}
 				}
 			}
-		} catch (Exception e) {
+		} catch (Throwable e) {
 			String message = "An error occurred trying to clear text on " + getElementName();
 		}
 		return this;
 	}
 
 
-	void disableScreenshots() {
+	void disableScreenshots() throws Throwable {
 		setOption(Common.ENABLE_SCREENSHOTS, false);
 	}
 
-	public Element setText(String text) {
+	public Element setText(String text) throws Throwable {
 		String logText = "Entered data '" + text + "' in " + getElementName();
 		class JsSetValue {
-			void run() {
+			void run() throws Throwable {
 				healthCheck();
 				try {
 					jsSetValue(text);
@@ -436,7 +436,7 @@ public class Element extends ElementOptions {
 			}
 		}
 		class SendKeys {
-			void run()  {
+			void run() throws Throwable {
 				healthCheck();
 				try {
 					_webElement.sendKeys(text);
@@ -567,7 +567,7 @@ public class Element extends ElementOptions {
 //		return isDisplayed;
 //	}
 
-	public Element highlight() {
+	public Element highlight() throws Throwable {
 		unhighlight();
 		this.healthCheck();
 		_driver.executeScript("arguments[0].setAttribute('style', arguments[1]);", _webElement, getHighLightStyle());
@@ -597,13 +597,13 @@ public class Element extends ElementOptions {
 		_lastElementHighlighted = element;
 	}
 
-	public void submit() {
+	public void submit() throws Throwable {
 		startPoint();
 		_webElement.submit();
 		exitPoint();
 	}
 
-	public void load() {
+	public void load() throws Throwable {
 		if (isNull(_webElement)) {
 			Wait<WebDriver> wait = new FluentWait<WebDriver>(_driver.getWrappedWebDriver())
 					.withTimeout(resolve(), TimeUnit.MILLISECONDS)
@@ -624,7 +624,7 @@ public class Element extends ElementOptions {
 			lockToWindow();
 	}
 
-	public Element reload() {
+	public Element reload() throws Throwable {
 		if (isNull(_webElement)) {
 			load();
 		} else {
@@ -637,7 +637,7 @@ public class Element extends ElementOptions {
 		return this;
 	}
 
-	public void lockToWindow() {
+	public void lockToWindow() throws Throwable {
 		if (!shouldLockToWindow())
 			return;
 		try {
@@ -652,7 +652,7 @@ public class Element extends ElementOptions {
 		return this;
 	}
 
-	public Element setFocus() {
+	public Element setFocus() throws Throwable {
 		startPoint();
 		healthCheck();
 		jsSetFocus();
@@ -668,17 +668,17 @@ public class Element extends ElementOptions {
 		}
 	}
 
-	public boolean isSelected() {
+	public boolean isSelected() throws Throwable {
 		healthCheck();
 		return _webElement.isSelected();
 	}
 
-	public boolean isDisabled() {
+	public boolean isDisabled() throws Throwable {
 		healthCheck();
 		return !_webElement.isEnabled();
 	}
 
-	public String getText() {
+	public String getText() throws Throwable {
 		healthCheck();
 		String value = null;
 		startPoint();
@@ -701,12 +701,12 @@ public class Element extends ElementOptions {
 		return findElements(locator);
 	}
 
-	public boolean isDisplayed() {
+	public boolean isDisplayed() throws Throwable {
 		healthCheck();
 		return _webElement.isDisplayed();
 	}
 
-	public boolean isFullyDisplayed() {
+	public boolean isFullyDisplayed() throws Throwable {
 		healthCheck();
 		Rectangle rectangle = _webElement.getRect();
 		Dimension dimension = _driver.getWrappedWebDriver().manage().window().getSize();
@@ -716,22 +716,22 @@ public class Element extends ElementOptions {
 				rectangle.getX() + rectangle.height <= dimension.height;
 	}
 
-	public Point getLocation() {
+	public Point getLocation() throws Throwable {
 		healthCheck();
 		return _webElement.getLocation();
 	}
 
-	public Dimension getSize() {
+	public Dimension getSize() throws Throwable {
 		healthCheck();
 		return _webElement.getSize();
 	}
 
-	public Rectangle getRect() {
+	public Rectangle getRect() throws Throwable {
 		healthCheck();
 		return _webElement.getRect();
 	}
 
-	public String getCssValue(String s) {
+	public String getCssValue(String s) throws Throwable {
 		healthCheck();
 		return _webElement.getCssValue(s);
 	}

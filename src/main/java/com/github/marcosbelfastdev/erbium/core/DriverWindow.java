@@ -11,20 +11,20 @@ public class DriverWindow {
 		_driver = driver;
 	}
 	
-	public void setAutoWindowLocking(boolean value) {
+	public void setAutoWindowLocking(boolean value) throws Throwable {
 		_driver.setOption(Common.WINDOW_LOCKING, value);
 	}
 	
-	public void setAutoWindowSearch(boolean value) {
+	public void setAutoWindowSearch(boolean value) throws Throwable {
 		_driver.setOption(Common.WINDOW_SEARCH, true);
 	}
 	
-	public void setSize(Dimension targetSize) {
+	public void setSize(Dimension targetSize) throws Throwable {
 		_driver.setOption(Common.SCREEN_SIZE, targetSize);
 		_driver.getWrappedWebDriver().manage().window().setSize(targetSize);
 	}
 
-	public void setPosition(Point targetPosition) {
+	public void setPosition(Point targetPosition) throws Throwable {
 		_driver.setOption(Common.SCREEN_POSITION, targetPosition);
 		_driver.getWrappedWebDriver().manage().window().setPosition(targetPosition);
 	}

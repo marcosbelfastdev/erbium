@@ -55,7 +55,84 @@ class PlaybackOptions {
 		return new PlaybackOptions(options);
 	}
 
-	public void evaluateOptionChange(Common option, Object value) {
+	private Object adjustTypes(Common option, Object value) throws Throwable {
+		Common[] longs = {
+				Common.RESOLVE_TIMEOUT,
+				Common.INTERACT_DELAY_AFTER,
+				Common.INTERACT_DELAY_BEFORE,
+				Common.SCROLL_DELAY_AFTER,
+				Common.RETRY_INTERVAL,
+				Common.HIGHLIGHT_DELAY_AFTER,
+				Common.ENABLED_TIMEOUT,
+				Common.VISIBLE_TIMEOUT,
+				Common.PAGE_LOAD_TIMEOUT,
+				Common.SEARCHSCROLL_HEIGHT,
+				Common.SEARCHSCROLL_TIMEOUT,
+		};
+		try {
+			if (Arrays.asList(longs).contains(option)) {
+				if (value instanceof Integer)
+					value = Long.parseLong(String.valueOf(value));
+				return (Long) value;
+			}
+		} catch (Exception e) {
+			end(IncompatibleOptionTypes.class);
+		}
+
+		Common[] doubles = {
+				Common.SEARCHSCROLL_FACTOR
+		};
+		try {
+			if (Arrays.asList(doubles).contains(option)) {
+				return (Double) value;
+			}
+		} catch (Exception e) {
+			end(IncompatibleOptionTypes.class);
+		}
+
+		Common[] booleans = {
+				Common.LOAD_ON_DEMAND,
+				Common.HIGHLIGHT_ELEMENTS,
+				Common.SCROLL_TO_ELEMENTS,
+				Common.REQUIRE_ENABLED,
+				Common.REQUIRE_VISIBLE,
+				Common.EXECUTOR_CLEAR,
+				Common.EXECUTOR_CLICKS,
+				Common.EXECUTOR_SETTEXT,
+				Common.FALLBACK_TO_EXECUTOR,
+				Common.SUPPRESS_DELAYS,
+				Common.HANDLE_ALERTS,
+				Common.WINDOW_LOCKING,
+				Common.HIDE_PASSWORDS,
+				Common.ENABLE_SCREENSHOTS
+		};
+		try {
+			if (Arrays.asList(booleans).contains(option)) {
+				return (Boolean) value;
+			}
+		} catch (Exception e) {
+			end(IncompatibleOptionTypes.class);
+		}
+
+		try {
+			if (option.equals(Common.SEARCHSCROLL_RESOLVE)) {
+				return (Integer) value;
+			}
+		} catch (Exception e) {
+			end(IncompatibleOptionTypes.class);
+		}
+
+		try {
+			if (option.equals(Common.ALERTS_ACTION)) {
+				return (AlertOption) value;
+			}
+		} catch (Exception e) {
+			end(IncompatibleOptionTypes.class);
+		}
+		return value;
+	}
+
+	public void evaluateOptionChange(Common option, Object value) throws Throwable {
 
 		if (value instanceof Integer ||
 			value instanceof Double ||
@@ -80,6 +157,8 @@ class PlaybackOptions {
 
 		switch (option) {
 			case RETRY_INTERVAL:
+				if (!(value instanceof Long))
+					end(IncompatibleOptionTypes.class);
 				if ((double) value < 20.0d) {
 					end(RetryIntervalTooSmall.class);
 				}
@@ -130,10 +209,9 @@ class PlaybackOptions {
 		}
 	}
 
-	protected void setOption(Common option, Object value) {
+	protected void setOption(Common option, Object value) throws Throwable {
+		value = adjustTypes(option, value);
 		if (_options.containsKey(option)) {
-			if (!getOption(option).getClass().equals(value.getClass()))
-				end(IncompatibleOptionTypes.class);
 			evaluateOptionChange(option, value);
 			_options.replace(option, value);
 		} else

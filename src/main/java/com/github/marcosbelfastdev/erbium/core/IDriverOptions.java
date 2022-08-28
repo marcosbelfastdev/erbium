@@ -4,11 +4,11 @@ import org.openqa.selenium.WebDriver;
 
 public interface IDriverOptions {
     WebDriver getWrappedWebDriver();
-    void resetPlaybackOptions();
+    void resetPlaybackOptions() throws Throwable;
     void setPlaybackOptions();
-    DriverOptions setOption(Common common, Object option);
+    DriverOptions setOption(Common common, Object option) throws Throwable;
     Object getOption(Common playbackOption);
-    DriverOptions reset();
+    DriverOptions reset() throws Throwable;
     Boolean shouldLoad();
     Long delayBefore();
     Long resolve();

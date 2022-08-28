@@ -5,23 +5,23 @@ import java.lang.reflect.InvocationTargetException;
 
 public class ErrorHandling {
 
-    public static void end(Class<?> exceptionClass, Throwable exception, String message) {
+    public static void end(Class<?> exceptionClass, Throwable exception, String message) throws Throwable {
         printMessages(exception, message);
         throw initClass(exceptionClass);
     }
 
-    public static void end(Class<?> exceptionClass, String message) {
+    public static void end(Class<?> exceptionClass, String message) throws Throwable {
         printMessage(message);
         throw initClass(exceptionClass);
     }
 
-    public static void end(Class<?> exceptionClass) {
+    public static void end(Class<?> exceptionClass) throws Throwable {
         throw initClass(exceptionClass);
     }
 
     public static void alert(Class<?> exceptionClass) {
-        RuntimeException runtimeException = initClass(exceptionClass);
-        printMessage(runtimeException.getMessage());
+        Throwable throwable = initClass(exceptionClass);
+        printMessage(throwable.getMessage());
     }
 
     private static void printMessages(Throwable exception, String message) {
@@ -37,7 +37,7 @@ public class ErrorHandling {
         System.out.println(message);
     }
 
-    private static RuntimeException initClass(Class<?> clazz) {
+    private static Throwable initClass(Class<?> clazz) {
         Object object ;
         Constructor<?>[] constructors = clazz.getDeclaredConstructors();
         try {
@@ -45,7 +45,7 @@ public class ErrorHandling {
         } catch (InstantiationException | InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        return (RuntimeException) object;
+        return (Throwable) object;
     }
 
 }

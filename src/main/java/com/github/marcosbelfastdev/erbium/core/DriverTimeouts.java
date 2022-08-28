@@ -17,27 +17,27 @@ public class DriverTimeouts {
 		return _driver.getWrappedWebDriver().manage().timeouts().setScriptTimeout(time, unit);
 	}
 	
-	public void setPageLoadTimeout(int time) {
+	public void setPageLoadTimeout(int time) throws Throwable {
 		_driver.setOption(Common.PAGE_LOAD_TIMEOUT, time);
 	}
 	
-	public void setRetryInterval(int time) {
+	public void setRetryInterval(int time) throws Throwable {
 		_driver.setOption(Common.RETRY_INTERVAL, time);
 	}
 	
-	public void setResolveTimeout(int time) {
+	public void setResolveTimeout(int time) throws Throwable {
 		_driver.setOption(Common.RESOLVE_TIMEOUT, time);
 	}
 	
-	public void setElementVisibleTimeout(int time) {
+	public void setElementVisibleTimeout(int time) throws Throwable {
 		_driver.setOption(Common.VISIBLE_TIMEOUT, time);
 	}
 	
-	public void setElementEnabledTimeout(int time) {
+	public void setElementEnabledTimeout(int time) throws Throwable {
 		_driver.setOption(Common.ENABLED_TIMEOUT, time);
 	}
 	
-	public void setSearchScrollTimeout(int time) {
+	public void setSearchScrollTimeout(int time) throws Throwable {
 		_driver.setOption(Common.SEARCHSCROLL_TIMEOUT, time);
 	}
 }

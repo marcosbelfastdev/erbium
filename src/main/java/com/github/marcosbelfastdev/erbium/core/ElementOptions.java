@@ -29,7 +29,7 @@ public class ElementOptions extends BaseElement implements IElementOptions {
     }
 
     @Override
-    public ElementOptions setOption(Common option, Object value) {
+    public ElementOptions setOption(Common option, Object value) throws Throwable {
         _playbackOptions.setOption(option, value);
         return this;
     }

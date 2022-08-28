@@ -1,6 +1,6 @@
 package com.github.marcosbelfastdev.erbium.exceptions;
 
-public class EnabledTimeoutTooBig extends Throwable {
+public class EnabledTimeoutTooBig extends RuntimeException {
 
     public EnabledTimeoutTooBig() {
         super(
