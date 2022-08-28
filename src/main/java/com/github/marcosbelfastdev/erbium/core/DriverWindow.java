@@ -37,14 +37,14 @@ public class DriverWindow {
 		return _driver.getWrappedWebDriver().manage().window().getPosition();
 	}
 
-	public void maximize() {
-		_driver.getWrappedWebDriver().manage().window().maximize();
-		_driver.setOption(Common.SCREEN_SIZE, _driver.getWrappedWebDriver().manage().window().getSize());
-	}
-	
-	public void fullscreen() {
-		_driver.getWrappedWebDriver().manage().window().fullscreen();
-		_driver.setOption(Common.FULLSCREEN, true);
-	}
+//	public void maximize() {
+//		_driver.getWrappedWebDriver().manage().window().maximize();
+//		_driver.setOption(Common.SCREEN_SIZE, _driver.getWrappedWebDriver().manage().window().getSize());
+//	}
+//
+//	public void fullscreen() {
+//		_driver.getWrappedWebDriver().manage().window().fullscreen();
+//		_driver.setOption(Common.FULLSCREEN, true);
+//	}
 	
 }
