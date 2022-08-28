@@ -24,8 +24,8 @@ import static java.util.Objects.isNull;
 public class Element extends ElementOptions {
 
 
-	public Element(By by) {
-		super(by);
+	public Element(Driver driver, By by) {
+		super(driver, by);
 	}
 
 	void healthCheck()  {
@@ -322,7 +322,7 @@ public class Element extends ElementOptions {
 	}
 
     public Element dragAndDrop(By by) {
-		Element element = new Element(by);
+		Element element = new Element(_driver, by);
         return dragAndDrop(element);
     }
 
@@ -691,7 +691,7 @@ public class Element extends ElementOptions {
 		List<WebElement> webElements = _webElement.findElements(locator);
 		List<Element> elements = new ArrayList<>();
 		for(WebElement webElement : webElements)
-			elements.add(new Element(locator));
+			elements.add(new Element(_driver, locator));
 		return elements;
 	}
 

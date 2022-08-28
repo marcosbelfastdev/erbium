@@ -4,12 +4,14 @@ import org.openqa.selenium.By;
 
 import java.util.Map;
 
+import static java.util.Objects.isNull;
+
 public class ElementOptions extends BaseElement implements IElementOptions {
 
     private PlaybackOptions _playbackOptions;
 
-    public ElementOptions(By by) {
-        super(by);
+    public ElementOptions(Driver driver, By by) {
+        super(driver, by);
         setPlaybackOptions();
     }
 
@@ -20,11 +22,9 @@ public class ElementOptions extends BaseElement implements IElementOptions {
     @Override
     public Object getOption(Common option) {
         Object value;
-        try {
-            value = _playbackOptions.getOption(option);
-        } catch (Exception e) {
+        value = _playbackOptions.getOption(option);
+        if (isNull(value))
             value = _driver.getOption(option);
-        }
         return value;
     }
 
@@ -53,22 +53,22 @@ public class ElementOptions extends BaseElement implements IElementOptions {
 
     @Override
     public Boolean shouldLoad() {
-        return null;
+        return (boolean) getOption(Common.LOAD_ON_DEMAND);
     }
 
     @Override
     public Long delayBefore() {
-        return null;
+        return (long) getOption(Common.INTERACT_DELAY_BEFORE);
     }
 
     @Override
     public Long resolve() {
-        return null;
+        return (long) getOption(Common.RESOLVE_TIMEOUT);
     }
 
     @Override
     public Long retryInterval() {
-        return null;
+        return (long) getOption(Common.RETRY_INTERVAL);
     }
 
     protected boolean isExecutorEnabled() {
@@ -94,16 +94,16 @@ public class ElementOptions extends BaseElement implements IElementOptions {
 
     @Override
     public Long highlightAfter() {
-        return null;
+        return (long) getOption(Common.HIGHLIGHT_DELAY_AFTER);
     }
 
     @Override
     public Boolean shouldSuppressDelays() {
-        return null;
+        return (boolean) getOption(Common.SUPPRESS_DELAYS);
     }
 
-    public int getResolveTimeout() {
-        return (int) getOption(Common.RESOLVE_TIMEOUT);
+    public long getResolveTimeout() {
+        return (long) getOption(Common.RESOLVE_TIMEOUT);
     }
 
     public boolean requiresExecutorClick() {
@@ -114,24 +114,24 @@ public class ElementOptions extends BaseElement implements IElementOptions {
         return (boolean) getOption(Common.FALLBACK_TO_EXECUTOR);
     }
 
-    public int getRetryInterval() {
-        return (int) getOption(Common.RETRY_INTERVAL);
+    public long getRetryInterval() {
+        return (long) getOption(Common.RETRY_INTERVAL);
     }
 
     public boolean requiresElementVisible() {
         return (boolean) getOption(Common.REQUIRE_VISIBLE);
     }
 
-    public int getElementVisibleTimeout() {
-        return (int) getOption(Common.VISIBLE_TIMEOUT);
+    public long getElementVisibleTimeout() {
+        return (long) getOption(Common.VISIBLE_TIMEOUT);
     }
 
     public boolean requiresElementEnabled() {
         return (boolean) getOption(Common.REQUIRE_ENABLED);
     }
 
-    public int getElementEnabledTimeout() {
-        return (int) getOption(Common.ENABLED_TIMEOUT);
+    public long getElementEnabledTimeout() {
+        return (long) getOption(Common.ENABLED_TIMEOUT);
     }
 
     public boolean shouldHighlightFrames() {
@@ -158,12 +158,12 @@ public class ElementOptions extends BaseElement implements IElementOptions {
         return (String) getOption(Common.HIGHLIGHT_STYLE);
     }
 
-    public int getAfterHighlightDelay() {
-        return (int) getOption(Common.HIGHLIGHT_DELAY_AFTER);
+    public long getAfterHighlightDelay() {
+        return (long) getOption(Common.HIGHLIGHT_DELAY_AFTER);
     }
 
     public boolean allowDelays() {
-        return !((boolean) getOption(Common.SUPPRESS_DELAYS));
+        return !shouldSuppressDelays();
     }
 
 }

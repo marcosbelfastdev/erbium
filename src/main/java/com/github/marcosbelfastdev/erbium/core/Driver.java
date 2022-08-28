@@ -54,7 +54,7 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
         List<Element> elements = new ArrayList<>();
         List<WebElement> webElements = _driver.findElements(by);
         for (WebElement webElement : webElements) {
-            elements.add(new Element(by));
+            elements.add(new Element(this, by));
         }
         return elements;
     }

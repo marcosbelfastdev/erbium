@@ -41,12 +41,17 @@ public class BaseElement {
      */
     protected String _name;
 
-    public BaseElement(By by) {
+    public BaseElement(Driver driver, By by) {
         setLocator(by);
+        setDriver(driver);
     }
 
     protected void setLocator(By by) {
         _locator = by;
+    }
+
+    protected void setDriver(Driver driver) {
+        this._driver = driver;
     }
 
 
