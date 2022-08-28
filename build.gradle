@@ -54,7 +54,7 @@ wrapper {
 
 
 jar {
-    baseName 'erbium3-'
+    baseName 'erbium'
 }
 
 javadoc {
