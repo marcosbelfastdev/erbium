@@ -2,6 +2,7 @@ package com.github.marcosbelfastdev.erbium.core;
 
 import com.github.marcosbelfastdev.erbium.exceptions.ErrorLockingToWindow;
 import com.github.marcosbelfastdev.erbium.exceptions.NoElementFound;
+import com.github.marcosbelfastdev.erbium.exceptions.SyncedFindElementsError;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.internal.Coordinates;
@@ -12,7 +13,6 @@ import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -28,24 +28,31 @@ public class Element extends ElementOptions {
 		super(driver, by);
 	}
 
-	void healthCheck() throws Throwable {
-		if(isNull(_webElement))
+	public Element(Driver driver, WebElement webElement) {
+		super(driver, webElement);
+	}
+
+	private void doSelfCheck() throws Throwable {
+		if(isNull(_webElement)) {
 			load();
+			return;
+		}
 
 		try {
-			_webElement.getSize();
+			_webElement.isDisplayed();
 		} catch (Exception e) {
-			reload();
+			load();
 		}
+
 	}
 
 	public String getTagName() throws Throwable {
-		healthCheck();
+		doSelfCheck();
 		return _webElement.getTagName();
 	}
 
 	public String getAttribute(String s) throws Throwable {
-		healthCheck();
+		doSelfCheck();
 		return _webElement.getAttribute(s);
 	}
 
@@ -90,11 +97,10 @@ public class Element extends ElementOptions {
 
 		class JsClick {
 			void run() throws Throwable {
-				healthCheck();
 				try {
 					jsClick();
 				} catch (Exception e) {
-					healthCheck();
+					doSelfCheck();
 					jsClick();
 				}
 				exitPoint();
@@ -103,11 +109,10 @@ public class Element extends ElementOptions {
 
 		class Click {
 			void run() throws Throwable {
-				healthCheck();
 				try {
 					_webElement.click();
 				} catch (Exception e) {
-					healthCheck();
+					doSelfCheck();
 					_webElement.click();
 				}
 				exitPoint();
@@ -115,16 +120,15 @@ public class Element extends ElementOptions {
 		}
 
 		class ClickError {
-			void run(Exception e) {
-				String message = "An error occurred trying to click on " + getElementName();
-				e.printStackTrace();
+			void run(Exception e) throws Throwable {
+				end(ClickError.class);
 			}
 		}
 
 		// process before any usage
 		// startPoint is mandatory
 
-		startPoint();
+		entry();
 
         /*
         If Javascript injection is enabled and
@@ -168,38 +172,29 @@ public class Element extends ElementOptions {
 
 	}
 
-	void startPoint() throws Throwable {
+	void entry() throws Throwable {
 		var sw = new StopWatch();
-		startPointWindowLocking();
-		handleDiplayedStatus();
-		handleEnabledStatus();
-		handleAutoScrolling();
-		handleHighlight();
-		handleDelayToInteract(sw.elapsedTime());
+		doSelfCheck();
+		doSwitchWindow();
+		doDisplayedCheck();
+		doEnabledCheck();
+		doAutoScrolling();
+		doHighlighting();
+		doDelayBefore(sw.elapsedTime());
 	}
 
-	private void startPointWindowLocking() throws Throwable {
-
-		// Option must be active
-		// and window must have been set by reload() or lockToWindow()
-		// set a window if null
-
-		if (shouldLockToWindow()) {
-			if (!isNull(_window)) {
-				try {
-					_driver.getWrappedWebDriver().switchTo().window(_window);
-				} catch (Exception e) {
-					end(e.getClass());
-				}
-			} else {
-				// assign a home window
-				lockToWindow();
+	private void doSwitchWindow() throws Throwable {
+		if (!isNull(_window)) {
+			try {
+				_driver.getWrappedWebDriver().switchTo().window(_window);
+				return;
+			} catch (Exception e) {
+				end(e.getClass());
 			}
 		}
-
 	}
 
-	protected void handleAutoScrolling() throws Throwable {
+	protected void doAutoScrolling() throws Throwable {
 		if (isDisplayed()) {
 			if (shouldScroll()) {
 				jsScroll();
@@ -207,14 +202,14 @@ public class Element extends ElementOptions {
 		}
 	}
 
-	protected void handleHighlight() throws Throwable {
+	protected void doHighlighting() throws Throwable {
 		if (isDisplayed())
 			if (shouldHighlight())
 				highlight();
 	}
 
 
-	protected void handleDelayToInteract(long elapsed) {
+	protected void doDelayBefore(long elapsed) {
 		// deduct any previous delay from desired delay to interact
 		if (allowDelays())
 			sleep(getDelayToInteractBefore() - elapsed);
@@ -236,9 +231,7 @@ public class Element extends ElementOptions {
 		return _window;
 	}
 
-	protected void handleDiplayedStatus() throws Throwable {
-
-		load();
+	protected void doDisplayedCheck() throws Throwable {
 		if (requiresElementVisible() && !isDisplayed()) {
 			WebDriverWait waitVisible = new WebDriverWait(_driver.getWrappedWebDriver(),
 										(long) getElementVisibleTimeout() / 1000, getRetryInterval());
@@ -247,7 +240,7 @@ public class Element extends ElementOptions {
 	}
 
 
-	protected void handleEnabledStatus() throws Throwable {
+	protected void doEnabledCheck() throws Throwable {
 		if (requiresElementEnabled() && isDisabled()) {
 			WebDriverWait waitEnabled = new WebDriverWait(_driver.getWrappedWebDriver(),
 										(long) getElementEnabledTimeout() / 1000, getRetryInterval());
@@ -311,7 +304,7 @@ public class Element extends ElementOptions {
 	public void hide() throws Throwable {
 		boolean suppressDelays = (boolean) getOption(Common.SUPPRESS_DELAYS);
 		setOption(Common.SUPPRESS_DELAYS, true);
-		startPoint();
+		entry();
 		jsHide();
 		setOption(Common.SUPPRESS_DELAYS, suppressDelays);
 		exitPoint();
@@ -327,8 +320,8 @@ public class Element extends ElementOptions {
     }
 
     public Element dragAndDrop(Element target) throws Throwable {
-	    startPoint();
-		target.startPoint();
+	    entry();
+		target.entry();
         new Actions(_driver.getWrappedWebDriver()).dragAndDrop(this.getWrappedWebElement(), target.getWrappedWebElement()).perform();
         target.exitPoint();
 	    exitPoint();
@@ -355,7 +348,7 @@ public class Element extends ElementOptions {
 		else
 			encText = text;
 		String logText = "Entered data '" + encText + "' in " + getElementName();
-	    startPoint();
+	    entry();
 		if (isExecutorEnabled()) {
 			try {
 				_driver.executeScript("arguments[0].type=\"password\"", _webElement);
@@ -365,7 +358,7 @@ public class Element extends ElementOptions {
 		} else {
 			String message = "SetPassword() requires Javascript, which has been disabled.";
 		}
-		healthCheck();
+		doSelfCheck();
 		// if Javascript is enforced or we know beforehand
 		// element is disabled or not visible (therefore Javascript fallback)
 		try {
@@ -405,7 +398,7 @@ public class Element extends ElementOptions {
 					_webElement.clear();
 				} catch (Exception e) {
 					if (shouldFallbackToExecutor()) {
-						healthCheck();
+						doSelfCheck();
 						jsClear();
 					}
 				}
@@ -425,11 +418,11 @@ public class Element extends ElementOptions {
 		String logText = "Entered data '" + text + "' in " + getElementName();
 		class JsSetValue {
 			void run() throws Throwable {
-				healthCheck();
+				doSelfCheck();
 				try {
 					jsSetValue(text);
 				} catch (Exception e) {
-					healthCheck();
+					doSelfCheck();
 					jsSetValue(text);
 				}
 				exitPoint();
@@ -437,11 +430,11 @@ public class Element extends ElementOptions {
 		}
 		class SendKeys {
 			void run() throws Throwable {
-				healthCheck();
+				doSelfCheck();
 				try {
 					_webElement.sendKeys(text);
 				} catch (Exception e) {
-					healthCheck();
+					doSelfCheck();
 					_webElement.sendKeys(text);
 				}
 				exitPoint();
@@ -453,7 +446,7 @@ public class Element extends ElementOptions {
 				e.printStackTrace();
 			}
 		}
-		startPoint();
+		entry();
 		// if Javascript is enforced or we know beforehand
 		// element is disabled or not visible (therefore Javascript fallback)
 		try {
@@ -569,7 +562,7 @@ public class Element extends ElementOptions {
 
 	public Element highlight() throws Throwable {
 		unhighlight();
-		this.healthCheck();
+		this.doSelfCheck();
 		_driver.executeScript("arguments[0].setAttribute('style', arguments[1]);", _webElement, getHighLightStyle());
 		var sw = new StopWatch();
 		_lastElementHighlighted = _webElement;
@@ -598,7 +591,7 @@ public class Element extends ElementOptions {
 	}
 
 	public void submit() throws Throwable {
-		startPoint();
+		entry();
 		_webElement.submit();
 		exitPoint();
 	}
@@ -653,8 +646,8 @@ public class Element extends ElementOptions {
 	}
 
 	public Element setFocus() throws Throwable {
-		startPoint();
-		healthCheck();
+		entry();
+		doSelfCheck();
 		jsSetFocus();
 		exitPoint();
 		return this;
@@ -669,19 +662,19 @@ public class Element extends ElementOptions {
 	}
 
 	public boolean isSelected() throws Throwable {
-		healthCheck();
+		doSelfCheck();
 		return _webElement.isSelected();
 	}
 
 	public boolean isDisabled() throws Throwable {
-		healthCheck();
+		doSelfCheck();
 		return !_webElement.isEnabled();
 	}
 
 	public String getText() throws Throwable {
-		healthCheck();
+		doSelfCheck();
 		String value = null;
-		startPoint();
+		entry();
 		value = _webElement.getText();
 		exitPoint();
 		return value;
@@ -695,53 +688,101 @@ public class Element extends ElementOptions {
 		return elements;
 	}
 
-	public List<Element> minFindElements(By locator, int minElements) {
-		// TO DO
-		// Create logic to wait until a minimum number of elements exit
-		return findElements(locator);
+
+	/**
+	 * Searches for elements within the element hierarchy
+	 * and returns a list with the minimum number of elements required.
+	 * @param by
+	 * @param minElements
+	 * @return
+	 * @throws Throwable
+	 */
+	public List<Element> syncedFind(By by, int minElements) throws Throwable {
+		Timer timer = new Timer(resolve());
+		List<Element> elements = new ArrayList<>();
+		while (elements.size() < minElements && !timer.timedOut()) {
+			elements = _driver.findElements(by);
+		}
+		if (elements.size() < minElements) {
+			end(SyncedFindElementsError.class);
+		}
+		return elements;
 	}
 
+
 	public boolean isDisplayed() throws Throwable {
-		healthCheck();
-		return _webElement.isDisplayed();
+		boolean value;
+		try {
+			value = _webElement.isDisplayed() && _webElement.getRect().width > 0;
+		} catch (Exception e) {
+			doSelfCheck();
+			value = _webElement.isDisplayed() && _webElement.getRect().width > 0;
+		}
+		return value;
 	}
 
 	public boolean isFullyDisplayed() throws Throwable {
-		healthCheck();
-		Rectangle rectangle = _webElement.getRect();
-		Dimension dimension = _driver.getWrappedWebDriver().manage().window().getSize();
-		return rectangle.getX() >= 0 &&
-				rectangle.getY() >= 0 &&
-				rectangle.getX() + rectangle.width <= dimension.width &&
-				rectangle.getX() + rectangle.height <= dimension.height;
+		doSelfCheck();
+		try {
+			Rectangle rectangle = _webElement.getRect();
+			Dimension dimension = _driver.getWrappedWebDriver().manage().window().getSize();
+			return rectangle.getX() >= 0 &&
+					rectangle.getY() >= 0 &&
+					rectangle.getX() + rectangle.width <= dimension.width &&
+					rectangle.getX() + rectangle.height <= dimension.height &&
+					isDisplayed();
+		} catch (Exception e) {
+			end(e.getClass());
+		}
+		return false;
 	}
 
 	public Point getLocation() throws Throwable {
-		healthCheck();
-		return _webElement.getLocation();
+		Point value;
+		try {
+			value = _webElement.getLocation();
+		} catch (Exception ignored) {
+			doSelfCheck();
+			value = _webElement.getLocation();
+		}
+		return value;
 	}
 
 	public Dimension getSize() throws Throwable {
-		healthCheck();
+		doSelfCheck();
 		return _webElement.getSize();
 	}
 
 	public Rectangle getRect() throws Throwable {
-		healthCheck();
-		return _webElement.getRect();
+		Rectangle value;
+		try {
+			value = _webElement.getRect();
+		} catch (Exception ignored) {
+			doSelfCheck();
+			value = _webElement.getRect();
+		}
+		return value;
 	}
 
 	public String getCssValue(String s) throws Throwable {
-		healthCheck();
-		return _webElement.getCssValue(s);
+		String value;
+		try {
+			value = _webElement.getCssValue(s);
+		} catch (Exception ignored) {
+			doSelfCheck();
+			value = _webElement.getCssValue(s);
+		}
+		return value;
 	}
 
-	public Coordinates getCoordinates() {
-		return ((Locatable) _driver.getWrappedWebDriver()).getCoordinates();
-	}
-
-	public enum HighlightOptions {
-		DoNotUnhighlight,
-		UnhighlightAfter
+	public Coordinates getCoordinates() throws Throwable {
+		Coordinates value;
+		try {
+			value = ((Locatable) _driver.getWrappedWebDriver()).getCoordinates();
+		} catch (Exception ignored) {
+			doSelfCheck();
+			value = ((Locatable) _driver.getWrappedWebDriver()).getCoordinates();
+		}
+		return value;
 	}
 }

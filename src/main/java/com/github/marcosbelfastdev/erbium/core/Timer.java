@@ -24,6 +24,10 @@ public class Timer {
         return endTime - System.currentTimeMillis() <= 0;
     }
 
+    public boolean hasTimeLeft() {
+        return !timedOut();
+    }
+
     public static void sleep(long sleep) {
         if (sleep <= 0)
             return;

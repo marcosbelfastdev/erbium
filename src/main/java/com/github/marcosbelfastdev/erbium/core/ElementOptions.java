@@ -1,6 +1,7 @@
 package com.github.marcosbelfastdev.erbium.core;
 
 import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
 
 import java.util.Map;
 
@@ -13,6 +14,10 @@ public class ElementOptions extends BaseElement implements IElementOptions {
     public ElementOptions(Driver driver, By by) {
         super(driver, by);
         setPlaybackOptions();
+    }
+
+    public ElementOptions(Driver driver, WebElement webElement) {
+        super(driver, webElement);
     }
 
     public Map<Common, Object> getOptions() {

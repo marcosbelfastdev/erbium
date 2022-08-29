@@ -46,6 +46,15 @@ public class BaseElement {
         setDriver(driver);
     }
 
+    public BaseElement(Driver driver, WebElement webElement) {
+        setDriver(driver);
+        setWrappedWebElement(webElement);
+    }
+
+    protected void setWrappedWebElement(WebElement webElement) {
+        _webElement = webElement;
+    }
+
     protected void setLocator(By by) {
         _locator = by;
     }

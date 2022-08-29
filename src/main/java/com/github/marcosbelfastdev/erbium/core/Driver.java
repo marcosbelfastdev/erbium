@@ -1,5 +1,6 @@
 package com.github.marcosbelfastdev.erbium.core;
 
+import com.github.marcosbelfastdev.erbium.exceptions.InsufficientElements;
 import com.github.marcosbelfastdev.erbium.exceptions.PageSourceError;
 import com.github.marcosbelfastdev.erbium.exceptions.SyncedFindElementsError;
 import org.openqa.selenium.*;
@@ -60,7 +61,7 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
     }
 
     @Override
-    public List<Element> syncedFindElements(By by, int minElements) throws Throwable {
+    public List<Element> syncedFind(By by, int minElements) throws Throwable {
         Timer timer = new Timer(resolve());
         List<Element> elements = new ArrayList<>();
         while (elements.size() < minElements && !timer.timedOut()) {
@@ -95,7 +96,7 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
         if (webElements.size() < 1) {
             end(SyncedFindElementsError.class);
         }
-        return null;
+        return new Element(this, webElements.get(0));
     }
 
     @Override
@@ -145,16 +146,6 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
     @Override
     public DriverManage manage() {
         return new DriverManage(this);
-    }
-
-    @Override
-    public List<Driver> syncedFind(By by, int minElements) {
-        return null;
-    }
-
-    @Override
-    public List<Driver> syncedFind(By by) {
-        return null;
     }
 
     @Override
