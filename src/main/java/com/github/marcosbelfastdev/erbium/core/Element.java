@@ -1,8 +1,6 @@
 package com.github.marcosbelfastdev.erbium.core;
 
-import com.github.marcosbelfastdev.erbium.exceptions.ErrorLockingToWindow;
-import com.github.marcosbelfastdev.erbium.exceptions.NoElementFound;
-import com.github.marcosbelfastdev.erbium.exceptions.SyncedFindElementsError;
+import com.github.marcosbelfastdev.erbium.exceptions.*;
 import org.openqa.selenium.*;
 import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.internal.Coordinates;
@@ -103,7 +101,7 @@ public class Element extends ElementOptions {
 					doSelfCheck();
 					jsClick();
 				}
-				exitPoint();
+				exit();
 			}
 		}
 
@@ -115,7 +113,7 @@ public class Element extends ElementOptions {
 					doSelfCheck();
 					_webElement.click();
 				}
-				exitPoint();
+				exit();
 			}
 		}
 
@@ -125,51 +123,32 @@ public class Element extends ElementOptions {
 			}
 		}
 
-		// process before any usage
-		// startPoint is mandatory
-
 		entry();
 
-        /*
-        If Javascript injection is enabled and
-        If Javascript is required or (element is not visible or not enabled) and
-        If, in case Javascript is not required, and a fallback to Javascript is allowed
-        Then, use Javascript to click
-        */
-
-        try {
-			if (isExecutorEnabled()) {
-				/* If javascript is required or element is not visible nor enabled */
-				if (requiresExecutorClick() || isDisabled() || !isDisplayed()) {
-					/* Or if */
-					if ((!requiresExecutorClick() && shouldFallbackToExecutor()) || requiresExecutorClick()) {
-						new JsClick().run();
-						return this;
-					}
-				}
-			}
-		} catch (Exception e) {
-        	new ClickError().run(e);
-		}
-
-		// Click using Selenium click()
-		try {
+		// Executor requirement check first off
+		if (requireExecutorSetText()) {
 			try {
-				// verify object is clickable indeed
-				new Click().run();
-
+				new JsClick().run();
 			} catch (Exception e) {
-				// fallback to javascript in case of any error
-				// but only if a fallback and injection are both allowed
-				if (shouldFallbackToExecutor() && isExecutorEnabled())
-					new JsClick().run();
+				new ClickError().run(e);
 			}
-		} catch (Exception e) {
-			new ClickError().run(e);
+			exit();
+			return this;
 		}
 
-		return this;
 
+		try {
+			new Click().run();
+		} catch (Exception e) {
+			if (shouldFallbackToExecutor())
+				try {
+					new JsClick().run();
+				} catch (Exception e2) {
+					new ClickError().run(e2);
+				}
+		}
+		exit();
+		return this;
 	}
 
 	void entry() throws Throwable {
@@ -215,7 +194,7 @@ public class Element extends ElementOptions {
 			sleep(getDelayToInteractBefore() - elapsed);
 	}
 
-	protected void handleDelayToInteractAfter() {
+	protected void doDelayAfter() {
 		if (allowDelays())
 			Timer.sleep((long)getOption(Common.INTERACT_DELAY_AFTER));
 	}
@@ -235,8 +214,14 @@ public class Element extends ElementOptions {
 		if (requiresElementVisible() && !isDisplayed()) {
 			WebDriverWait waitVisible = new WebDriverWait(_driver.getWrappedWebDriver(),
 										(long) getElementVisibleTimeout() / 1000, getRetryInterval());
-			waitVisible.until(ExpectedConditions.visibilityOf(_webElement));
+			try {
+				waitVisible.until(ExpectedConditions.visibilityOf(_webElement));
+			} catch (Exception e) {
+				end(DisplayedStatusError.class);
+			}
 		}
+		if (isNull(_webElement))
+			end(DisplayedStatusError.class);
 	}
 
 
@@ -244,17 +229,23 @@ public class Element extends ElementOptions {
 		if (requiresElementEnabled() && isDisabled()) {
 			WebDriverWait waitEnabled = new WebDriverWait(_driver.getWrappedWebDriver(),
 										(long) getElementEnabledTimeout() / 1000, getRetryInterval());
-			waitEnabled.until(ExpectedConditions.elementToBeClickable(_webElement));
+			try {
+				_webElement = waitEnabled.until(ExpectedConditions.elementToBeClickable(_webElement));
+			} catch (Exception e) {
+				end(EnabledStatusError.class);
+			}
 		}
+		if (isNull(_webElement))
+			end(EnabledStatusError.class);
 	}
 
 
-	void exitPoint() {
-		handleDelayToInteractAfter();
-		switchToNewWindowOpened();
+	protected void exit() {
+		doDelayAfter();
+		//switchToNewWindowOpened();
 	}
 
-	public void closeForeignWindows() {
+	public void closeAlienWindows() {
 
 		List<String> windows = new ArrayList<>(_driver.getWrappedWebDriver().getWindowHandles());
 		int attempts = 0;
@@ -302,12 +293,11 @@ public class Element extends ElementOptions {
 
 
 	public void hide() throws Throwable {
-		boolean suppressDelays = (boolean) getOption(Common.SUPPRESS_DELAYS);
-		setOption(Common.SUPPRESS_DELAYS, true);
+		boolean supress = (boolean) getOption(Common.SUPPRESS_DELAYS);
 		entry();
 		jsHide();
-		setOption(Common.SUPPRESS_DELAYS, suppressDelays);
-		exitPoint();
+		setOption(Common.SUPPRESS_DELAYS, supress);
+		exit();
 	}
 
 	private void jsHide() {
@@ -323,8 +313,8 @@ public class Element extends ElementOptions {
 	    entry();
 		target.entry();
         new Actions(_driver.getWrappedWebDriver()).dragAndDrop(this.getWrappedWebElement(), target.getWrappedWebElement()).perform();
-        target.exitPoint();
-	    exitPoint();
+        target.exit();
+	    exit();
         return this;
     }
 
@@ -342,13 +332,7 @@ public class Element extends ElementOptions {
 
 
 	public Element setPassword(String text) throws Throwable {
-		String encText;
-		if((boolean) getOption(Common.HIDE_PASSWORDS))
-			encText = "******";
-		else
-			encText = text;
-		String logText = "Entered data '" + encText + "' in " + getElementName();
-	    entry();
+		entry();
 		if (isExecutorEnabled()) {
 			try {
 				_driver.executeScript("arguments[0].type=\"password\"", _webElement);
@@ -365,7 +349,7 @@ public class Element extends ElementOptions {
 			if ((requireExecutorSetText() || !isDisplayed() || isDisabled())
 					|| ((!requireExecutorSetText() && shouldFallbackToExecutor()))) {
 				jsSetValue(text);
-				exitPoint();
+				exit();
 				return this;
 			}
 			// finally, Javascript is not enforced in options
@@ -383,12 +367,11 @@ public class Element extends ElementOptions {
 		} catch (Exception e) {
 			String message = "An error occurred trying to enter password on " + getElementName();
 		}
-		exitPoint();
+		exit();
 		return this;
 	}
 
 	public Element clear() {
-		String logText = "Cleared text on " + getElementName();
 		try {
 			if ((requireExecutorClear() || !_webElement.isDisplayed() || !_webElement.isEnabled())
 					|| ((!requireExecutorClear() && shouldFallbackToExecutor()))) {
@@ -425,7 +408,7 @@ public class Element extends ElementOptions {
 					doSelfCheck();
 					jsSetValue(text);
 				}
-				exitPoint();
+				exit();
 			}
 		}
 		class SendKeys {
@@ -437,7 +420,7 @@ public class Element extends ElementOptions {
 					doSelfCheck();
 					_webElement.sendKeys(text);
 				}
-				exitPoint();
+				exit();
 			}
 		}
 		class SetTextError {
@@ -471,7 +454,7 @@ public class Element extends ElementOptions {
 		} catch (Exception e) {
 			new SetTextError().run(e);
 		}
-		exitPoint();
+		exit();
 		return this;
 	}
 
@@ -593,7 +576,7 @@ public class Element extends ElementOptions {
 	public void submit() throws Throwable {
 		entry();
 		_webElement.submit();
-		exitPoint();
+		exit();
 	}
 
 	public void load() throws Throwable {
@@ -649,7 +632,7 @@ public class Element extends ElementOptions {
 		entry();
 		doSelfCheck();
 		jsSetFocus();
-		exitPoint();
+		exit();
 		return this;
 	}
 
@@ -676,7 +659,7 @@ public class Element extends ElementOptions {
 		String value = null;
 		entry();
 		value = _webElement.getText();
-		exitPoint();
+		exit();
 		return value;
 	}
 
