@@ -91,66 +91,6 @@ public class Element extends ElementOptions {
 		return name;
 	}
 
-	public Element click() throws Throwable {
-
-		class JsClick {
-			void run() throws Throwable {
-				try {
-					jsClick();
-				} catch (Exception e) {
-					doSelfCheck();
-					jsClick();
-				}
-				exit();
-			}
-		}
-
-		class Click {
-			void run() throws Throwable {
-				try {
-					_webElement.click();
-				} catch (Exception e) {
-					doSelfCheck();
-					_webElement.click();
-				}
-				exit();
-			}
-		}
-
-		class ClickError {
-			void run(Exception e) throws Throwable {
-				end(ClickError.class);
-			}
-		}
-
-		entry();
-
-		// Executor requirement check first off
-		if (requireExecutorSetText()) {
-			try {
-				new JsClick().run();
-			} catch (Exception e) {
-				new ClickError().run(e);
-			}
-			exit();
-			return this;
-		}
-
-
-		try {
-			new Click().run();
-		} catch (Exception e) {
-			if (shouldFallbackToExecutor())
-				try {
-					new JsClick().run();
-				} catch (Exception e2) {
-					new ClickError().run(e2);
-				}
-		}
-		exit();
-		return this;
-	}
-
 	void entry() throws Throwable {
 		var sw = new StopWatch();
 		doSelfCheck();
@@ -330,65 +270,71 @@ public class Element extends ElementOptions {
 		_driver.executeScript("arguments[0].value = '" + value + "';", _webElement);
 	}
 
+	public Element click() throws Throwable {
 
-	public Element setPassword(String text) throws Throwable {
 		entry();
-		if (isExecutorEnabled()) {
-			try {
-				_driver.executeScript("arguments[0].type=\"password\"", _webElement);
-			} catch (Exception e) {
-				_driver.executeScript("arguments[0].type=\"password\"", _webElement);
-			}
-		} else {
-			String message = "SetPassword() requires Javascript, which has been disabled.";
+
+		if (requiresExecutorClick()) {
+			jsClick();
+			exit();
+			return this;
 		}
-		doSelfCheck();
-		// if Javascript is enforced or we know beforehand
-		// element is disabled or not visible (therefore Javascript fallback)
+
+
 		try {
-			if ((requireExecutorSetText() || !isDisplayed() || isDisabled())
-					|| ((!requireExecutorSetText() && shouldFallbackToExecutor()))) {
-				jsSetValue(text);
-				exit();
-				return this;
-			}
-			// finally, Javascript is not enforced in options
-			// nor required due to element not enabled or visible
-			if (!requireExecutorSetText()) {
-				try {
-					_webElement.sendKeys(text);
-				} catch (Exception e) {
-					// fallback to javascript
-					if (shouldFallbackToExecutor()) {
-						jsSetValue(text);
-					}
-				}
-			}
+			_webElement.click();
 		} catch (Exception e) {
-			String message = "An error occurred trying to enter password on " + getElementName();
+			if (shouldFallbackToExecutor()) {
+				jsClick();
+			}
 		}
+
 		exit();
 		return this;
 	}
 
-	public Element clear() {
-		try {
-			if ((requireExecutorClear() || !_webElement.isDisplayed() || !_webElement.isEnabled())
-					|| ((!requireExecutorClear() && shouldFallbackToExecutor()))) {
-				jsClear();
-			} else {
-				try {
-					_webElement.clear();
-				} catch (Exception e) {
-					if (shouldFallbackToExecutor()) {
-						doSelfCheck();
-						jsClear();
-					}
-				}
-			}
-		} catch (Throwable e) {
-			String message = "An error occurred trying to clear text on " + getElementName();
+
+	public Element setPassword(String text) throws Throwable {
+		entry();
+
+		_driver.executeScript("arguments[0].type=\"password\"", _webElement);
+
+		if (requireExecutorSetText()) {
+			jsSetValue(text);
+			exit();
+			return this;
 		}
+
+		try {
+			_webElement.sendKeys(text);
+		} catch (Exception e) {
+			if (shouldFallbackToExecutor()) {
+				jsSetValue(text);
+			}
+		}
+
+		exit();
+		return this;
+	}
+
+	public Element clear() throws Throwable {
+		entry();
+
+		if (requireExecutorClear()) {
+			jsSetValue("");
+			exit();
+			return this;
+		}
+
+		try {
+			_webElement.clear();
+		} catch (Exception e) {
+			if (shouldFallbackToExecutor()) {
+				jsClear();
+			}
+		}
+
+		exit();
 		return this;
 	}
 
@@ -398,121 +344,67 @@ public class Element extends ElementOptions {
 	}
 
 	public Element setText(String text) throws Throwable {
-		String logText = "Entered data '" + text + "' in " + getElementName();
-		class JsSetValue {
-			void run() throws Throwable {
-				doSelfCheck();
-				try {
-					jsSetValue(text);
-				} catch (Exception e) {
-					doSelfCheck();
-					jsSetValue(text);
-				}
-				exit();
-			}
+		if (requireExecutorSetText()) {
+			jsSetValue(text);
+			exit();
+			return this;
 		}
-		class SendKeys {
-			void run() throws Throwable {
-				doSelfCheck();
-				try {
-					_webElement.sendKeys(text);
-				} catch (Exception e) {
-					doSelfCheck();
-					_webElement.sendKeys(text);
-				}
-				exit();
-			}
-		}
-		class SetTextError {
-			void run(Exception e) {
-				String message = "An error occurred trying to enter data on " + getElementName();
-				e.printStackTrace();
-			}
-		}
-		entry();
-		// if Javascript is enforced or we know beforehand
-		// element is disabled or not visible (therefore Javascript fallback)
-		try {
-			if ((requireExecutorSetText() || !isDisplayed() || isDisabled())
-					|| ((!requireExecutorSetText() && shouldFallbackToExecutor()) && isExecutorEnabled())) {
-				new JsSetValue().run();
-				return this;
-			}
-			// finally, Javascript is not enforced in options
-			// nor required due to element not enabled or visible
-			if (!requireExecutorSetText()) {
-				//System.out.println("Doing setText without JavaScript a priori (2)");
-				try {
-					new SendKeys().run();
-				} catch (Exception e) {
-					// fallback to javascript
-					if (shouldFallbackToExecutor() && isExecutorEnabled())
-						new JsSetValue().run();
-				}
-			}
 
+		try {
+			_webElement.sendKeys(text);
 		} catch (Exception e) {
-			new SetTextError().run(e);
+			if (shouldFallbackToExecutor()) {
+				jsSetValue(text);
+			}
 		}
+
 		exit();
 		return this;
 	}
 
-	protected Element jsScroll() {
-		_driver.executeScript("arguments[0].scrollIntoView({behavior: \"smooth\", block: \"center\"});", _webElement);
+	protected Element centerScroll() throws Throwable {
+		load();
+		jsScroll();
+		highlight();
 		if (allowDelays())
 			StopWatch.sleep((long)getOption(Common.SCROLL_DELAY_AFTER));
 		return this;
 	}
 
-//	public Element scrollDown() {
-//		return scroll();
-//	}
-//
-//	Element scroll() {
-//		return scroll(SearchScroll.SCROLL_TO_TOP_FIRST, SearchScroll.SCROLL_FACTOR);
-//	}
-//
-//	EElement scroll(SearchScroll direction, SearchScroll options) {
-//		if (!isExecutorEnabled())
-//			return this;
-//
-//		double searchScrollFactor = (double) getOption(Common.SEARCHSCROLL_FACTOR);
-//		int searchScrollHeight = (int) getOption(Common.SEARCHSCROLL_HEIGHT);
-//		int searchScrollDelay = (int) getOption(Common.SEARCHSCROLL_RESOLVE);
-//		int signal = (direction == SearchScroll.SCROLL_DOWN || direction == SearchScroll.SCROLL_TO_TOP_FIRST) ? 1 : -1;
-//		int offset = (options == SearchScroll.SCROLL_FACTOR)
-//				? (int) ((double) _driver.getWebDriver().manage().window().getSize().height * searchScrollFactor)
-//				: searchScrollHeight;
-//		if (direction == SearchScroll.SCROLL_TO_TOP_FIRST)
-//			_driver.executeScript("window.scrollTo(0,0);");
-//		long start = System.currentTimeMillis();
-//		long elapsed = 0;
-//		WebElement webElement = null;
-//		while (elapsed < getSearchScrollTimeout()) {
-//			try {
-//				screenshot(ScreenshotPoint.Before);
-//				try {
-//					if (_webElement.isDisplayed()) {
-//						break;
-//					}
-//				} catch (Exception ignore) {}
-//				for (int i = 0; i <= offset; i = i + 7) {
-//					_driver.executeScript("window.scrollBy(0, " + 7 * signal + ");");
-//				}
-//				try {
-//					webElement = new WebDriverWait(_driver.getWebDriver(), searchScrollDelay, getRetryInterval())
-//							             .until(ExpectedConditions.presenceOfElementLocated(_locator));
-//				} catch (Exception ignore) {}
-//				screenshot(ScreenshotPoint.After);
-//				if (webElement != null) {
-//					_webElement = webElement;
-//				}
-//			} catch (Exception ignore) {}
-//			elapsed = System.currentTimeMillis() - start;
-//		}
-//		return this;
-//	}
+	private void jsScroll() throws Throwable {
+		_driver.executeScript("arguments[0].scrollIntoView({behavior: \"smooth\", block: \"center\"});", _webElement);
+	}
+
+	public Element scrollDownTo() throws Throwable {
+
+		if (!isExecutorEnabled())
+			return this;
+
+		double searchScrollFactor =  (double) getOption(Common.SEARCHSCROLL_FACTOR);
+		int searchScrollDelay = (int) getOption(Common.SEARCHSCROLL_RESOLVE);
+		int signal = 1;
+		int offset =  (int) ((double) _driver.getWrappedWebDriver().manage().window().getSize().height * searchScrollFactor);
+
+		Timer timer = new Timer(getSearchScrollTimeout());
+		WebElement webElement = null;
+		while (timer.hasTimeLeft() && isNull(_webElement)) {
+			for (int i = 0; i <= offset; i = i + 7) {
+				_driver.executeScript("window.scrollBy(0, " + 7 * signal + ");");
+			}
+			try {
+				webElement = new WebDriverWait(_driver.getWrappedWebDriver(), searchScrollDelay, getRetryInterval())
+						.until(ExpectedConditions.presenceOfElementLocated(_locator));
+				_webElement = webElement;
+			} catch (Exception ignored) {
+
+			}
+		}
+
+		if (!isNull(_webElement))
+			jsScroll();
+
+		return this;
+	}
 
 	/**
 	 * Resets an element to its original state.
@@ -521,34 +413,17 @@ public class Element extends ElementOptions {
 	@Override
 	public Element reset() {
 		setHomeWindow(null);
-		_webElement = null;
+		setLocator(null);
+		setWrappedWebElement(null);
 		return this;
 	}
-
-//	public EElement scrollUp() {
-//		return scroll(EDriver.SearchScroll.SCROLL_UP, EDriver.SearchScroll.SCROLL_FACTOR);
-//	}
-
-//	public boolean isImageLoaded() {
-//		long start = System.nanoTime();
-//		boolean isDisplayed = false;
-//		do {
-//			isDisplayed = (boolean) _driver.executeScript("return arguments[0].complete " + "" +
-//					                                                   "&& typeof arguments[0].naturalWidth != \"undefined\" && arguments[0].naturalWidth > 0", _webElement);
-//		} while ((System.nanoTime() - start) / Math.pow(10, 6) < (int) getOption(Common.VISIBLE_TIMEOUT));
-//		if(isDisplayed)
-//			log(Reporting.LOG_TEST_STEPS, "Image " + getName() + " was found.");
-//		else
-//			log(Reporting.LOG_TEST_STEPS, "Image " + getName() + " was not found.");
-//		return isDisplayed;
-//	}
 
 	public Element highlight() throws Throwable {
 		unhighlight();
 		this.doSelfCheck();
 		_driver.executeScript("arguments[0].setAttribute('style', arguments[1]);", _webElement, getHighLightStyle());
 		var sw = new StopWatch();
-		_lastElementHighlighted = _webElement;
+		setLastElementHighlighted(_webElement);
 		if (getAfterHighlightDelay() > 0 && allowDelays()) {
 			Timer.sleep(getAfterHighlightDelay() - sw.elapsedTime());
 		}
@@ -591,6 +466,12 @@ public class Element extends ElementOptions {
 					return driver.findElement(_locator);
 				}
 			});
+		} else {
+			try {
+				_webElement = _driver.findElements(_locator).get(0).getWrappedWebElement();
+			} catch (Exception ignored) {
+
+			}
 		}
 
 		if (isNull(_webElement))
@@ -630,9 +511,8 @@ public class Element extends ElementOptions {
 
 	public Element setFocus() throws Throwable {
 		entry();
-		doSelfCheck();
 		jsSetFocus();
-		exit();
+		unhighlight();
 		return this;
 	}
 
@@ -645,21 +525,31 @@ public class Element extends ElementOptions {
 	}
 
 	public boolean isSelected() throws Throwable {
-		doSelfCheck();
+		try {
+			load();
+		} catch (Exception ignored) {
+
+		}
 		return _webElement.isSelected();
 	}
 
 	public boolean isDisabled() throws Throwable {
-		doSelfCheck();
+		try {
+			load();
+		} catch (Exception ignored) {
+
+		}
 		return !_webElement.isEnabled();
 	}
 
 	public String getText() throws Throwable {
-		doSelfCheck();
+		try {
+			load();
+		} catch (Exception ignored) {
+
+		}
 		String value = null;
-		entry();
 		value = _webElement.getText();
-		exit();
 		return value;
 	}
 
@@ -694,18 +584,26 @@ public class Element extends ElementOptions {
 
 
 	public boolean isDisplayed() throws Throwable {
+		try {
+			load();
+		} catch (Exception ignored) {
+
+		}
 		boolean value;
 		try {
 			value = _webElement.isDisplayed() && _webElement.getRect().width > 0;
 		} catch (Exception e) {
-			doSelfCheck();
-			value = _webElement.isDisplayed() && _webElement.getRect().width > 0;
+			return false;
 		}
 		return value;
 	}
 
 	public boolean isFullyDisplayed() throws Throwable {
-		doSelfCheck();
+		try {
+			load();
+		} catch (Exception ignored) {
+
+		}
 		try {
 			Rectangle rectangle = _webElement.getRect();
 			Dimension dimension = _driver.getWrappedWebDriver().manage().window().getSize();
@@ -721,50 +619,76 @@ public class Element extends ElementOptions {
 	}
 
 	public Point getLocation() throws Throwable {
+		try {
+			load();
+		} catch (Exception ignored) {
+
+		}
 		Point value;
 		try {
 			value = _webElement.getLocation();
 		} catch (Exception ignored) {
-			doSelfCheck();
-			value = _webElement.getLocation();
+			return null;
 		}
 		return value;
 	}
 
 	public Dimension getSize() throws Throwable {
-		doSelfCheck();
-		return _webElement.getSize();
+		try {
+			load();
+		} catch (Exception ignored) {
+
+		}
+		Dimension value;
+		try {
+			value = _webElement.getSize();
+		} catch (Exception ignored) {
+			return null;
+		}
+		return value;
 	}
 
 	public Rectangle getRect() throws Throwable {
+		try {
+			load();
+		} catch (Exception ignored) {
+
+		}
 		Rectangle value;
 		try {
 			value = _webElement.getRect();
 		} catch (Exception ignored) {
-			doSelfCheck();
-			value = _webElement.getRect();
+			return null;
 		}
 		return value;
 	}
 
 	public String getCssValue(String s) throws Throwable {
+		try {
+			load();
+		} catch (Exception ignored) {
+
+		}
 		String value;
 		try {
 			value = _webElement.getCssValue(s);
 		} catch (Exception ignored) {
-			doSelfCheck();
-			value = _webElement.getCssValue(s);
+			return null;
 		}
 		return value;
 	}
 
 	public Coordinates getCoordinates() throws Throwable {
+		try {
+			load();
+		} catch (Exception ignored) {
+
+		}
 		Coordinates value;
 		try {
 			value = ((Locatable) _driver.getWrappedWebDriver()).getCoordinates();
 		} catch (Exception ignored) {
-			doSelfCheck();
-			value = ((Locatable) _driver.getWrappedWebDriver()).getCoordinates();
+			return null;
 		}
 		return value;
 	}
