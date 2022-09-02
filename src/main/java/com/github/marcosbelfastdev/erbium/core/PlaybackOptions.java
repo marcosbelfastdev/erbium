@@ -25,6 +25,7 @@ class PlaybackOptions {
 		Map<Common, Object> options = new HashMap<>();
 		options.put(Common.LOAD_ON_DEMAND, true);
 		options.put(Common.RESOLVE_TIMEOUT, 120000L);
+		options.put(Common.FORCE_FULL_RELOAD, false);
 		options.put(Common.INTERACT_DELAY_BEFORE, 0L);
 		options.put(Common.SCROLL_DELAY_AFTER, 0L);
 		options.put(Common.HIGHLIGHT_STYLE, "border: 2px solid springgreen; border-radius: 5px;");

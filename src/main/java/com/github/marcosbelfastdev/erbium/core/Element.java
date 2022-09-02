@@ -93,10 +93,7 @@ public class Element extends ElementOptions {
 
 	void entry() throws Throwable {
 		var sw = new StopWatch();
-		doSelfCheck();
-		doSwitchWindow();
-		doDisplayedCheck();
-		doEnabledCheck();
+		reload();
 		doAutoScrolling();
 		doHighlighting();
 		doDelayBefore(sw.elapsedTime());
@@ -106,7 +103,6 @@ public class Element extends ElementOptions {
 		if (!isNull(_window)) {
 			try {
 				_driver.getWrappedWebDriver().switchTo().window(_window);
-				return;
 			} catch (Exception e) {
 				end(e.getClass());
 			}
@@ -272,7 +268,8 @@ public class Element extends ElementOptions {
 
 	public Element click() throws Throwable {
 
-		entry();
+		reload();
+
 
 		if (requiresExecutorClick()) {
 			jsClick();
@@ -454,6 +451,7 @@ public class Element extends ElementOptions {
 		exit();
 	}
 
+
 	public void load() throws Throwable {
 		if (isNull(_webElement)) {
 			Wait<WebDriver> wait = new FluentWait<WebDriver>(_driver.getWrappedWebDriver())
@@ -466,12 +464,6 @@ public class Element extends ElementOptions {
 					return driver.findElement(_locator);
 				}
 			});
-		} else {
-			try {
-				_webElement = _driver.findElements(_locator).get(0).getWrappedWebElement();
-			} catch (Exception ignored) {
-
-			}
 		}
 
 		if (isNull(_webElement))
@@ -479,18 +471,65 @@ public class Element extends ElementOptions {
 
 		if (isNull(_window))
 			lockToWindow();
+		else
+			doSwitchWindow();
+
+		if (requiresElementVisible() && !isDisplayed()) {
+			WebDriverWait waitVisible = new WebDriverWait(_driver.getWrappedWebDriver(),
+					(long) getElementVisibleTimeout() / 1000, getRetryInterval());
+			try {
+				waitVisible.until(ExpectedConditions.visibilityOf(_webElement));
+			} catch (Exception e) {
+				end(DisplayedStatusError.class);
+			}
+		}
+
+		if (requiresElementEnabled() && isDisabled()) {
+			WebDriverWait waitEnabled = new WebDriverWait(_driver.getWrappedWebDriver(),
+					(long) getElementEnabledTimeout() / 1000, getRetryInterval());
+			try {
+				_webElement = waitEnabled.until(ExpectedConditions.elementToBeClickable(_webElement));
+			} catch (Exception e) {
+				end(EnabledStatusError.class);
+			}
+		}
+
 	}
 
 	public Element reload() throws Throwable {
-		if (isNull(_webElement)) {
+		return reload(false);
+//		if (!isNull(_window)) {
+//			try {
+//				_driver.getWrappedWebDriver().switchTo().window(_window);
+//				return;
+//			} catch (Exception e) {
+//				end(e.getClass());
+//			}
+//		}
+	}
+
+	public boolean shouldForceFullReload() {
+		return (boolean) getOption(Common.FORCE_FULL_RELOAD);
+	}
+
+	public Element reload(boolean force) throws Throwable {
+		if (force || shouldForceFullReload() || isNull(_webElement)) {
 			load();
-		} else {
-			try {
-				_webElement = _driver.getWrappedWebDriver().findElements(_locator).get(0);
-			} catch (Exception e) {
-				end(NoElementFound.class);
-			}
+			return this;
 		}
+
+		doSwitchWindow();
+
+		try {
+			_webElement = _driver.getWrappedWebDriver().findElements(_locator).get(0);
+		} catch (Exception e) {
+			end(NoElementFound.class);
+		}
+		if (requiresElementVisible() && !(_webElement.isDisplayed() && _webElement.getRect().height > 0))
+			end(DisplayedStatusError.class);
+		if (requiresElementEnabled() && !_webElement.isEnabled())
+			end(EnabledStatusError.class);
+
 		return this;
 	}
 
@@ -591,7 +630,7 @@ public class Element extends ElementOptions {
 		}
 		boolean value;
 		try {
-			value = _webElement.isDisplayed() && _webElement.getRect().width > 0;
+			value = _webElement.isDisplayed() && _webElement.getRect().height > 0;
 		} catch (Exception e) {
 			return false;
 		}

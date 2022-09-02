@@ -2,6 +2,7 @@ package com.github.marcosbelfastdev.erbium.core;
 
 public enum Common {
     LOAD_ON_DEMAND,
+    FORCE_FULL_RELOAD,
     INTERACT_DELAY_BEFORE,
     RESOLVE_TIMEOUT,
     RETRY_INTERVAL,
