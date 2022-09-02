@@ -82,7 +82,7 @@ public class Element extends ElementOptions {
 
 	private void switchToNewWindowOpened() {
 		if (isNull(switchToNewWindow)) {
-			alert(CannotSwitchToNewWindow.class);
+			return;
 		}
 		switchToNewWindow = null;
 		boolean switchNext = false;
