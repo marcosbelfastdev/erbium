@@ -11,9 +11,11 @@ import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static com.github.marcosbelfastdev.erbium.core.ErrorHandling.alert;
 import static com.github.marcosbelfastdev.erbium.core.ErrorHandling.end;
 import static com.github.marcosbelfastdev.erbium.core.Timer.sleep;
 import static java.util.Objects.isNull;
@@ -30,28 +32,103 @@ public class Element extends ElementOptions {
 		super(driver, webElement);
 	}
 
-	private void doSelfCheck() throws Throwable {
-		if(isNull(_webElement)) {
-			load();
-			return;
-		}
+	private WebElement getLastElementHighlighted() {
+		return _lastElementHighlighted;
+	}
 
+	private void setLastElementHighlighted(WebElement element) {
+		_lastElementHighlighted = element;
+	}
+
+	private void entry() throws Throwable {
+		var sw = new StopWatch();
+		reload();
+		doAutoScrolling();
+		doHighlighting();
+		doDelayBefore(sw.elapsedTime());
+	}
+
+	private void doDelayBefore(long elapsed) {
+		// deduct any previous delay from desired delay to interact
+		if (allowDelays())
+			sleep(getDelayToInteractBefore() - elapsed);
+	}
+
+	private void doDelayAfter() {
+		if (allowDelays())
+			Timer.sleep((long)getOption(Common.INTERACT_DELAY_AFTER));
+	}
+
+	private long getDelayToInteractBefore() {
+		return (long) getOption(Common.INTERACT_DELAY_BEFORE);
+	}
+
+	private void doSwitchWindow() throws Throwable {
+		if (!isNull(_window)) {
+			try {
+				_driver.getWrappedWebDriver().switchTo().window(_window);
+			} catch (Exception e) {
+				end(e.getClass());
+			}
+		}
+	}
+
+	private void switchToNewWindowOpened() {
+		boolean switchNext = false;
 		try {
-			_webElement.isDisplayed();
-		} catch (Exception e) {
-			load();
+			Set<String> windows = _driver.getWindowHandles();
+			for (String window : windows) {
+				if (window.equals(_window)) {
+					switchNext = true;
+				}
+				if (switchNext)
+					_driver.getWrappedWebDriver().switchTo().window(window);
+			}
+		} catch (Exception ignored) {
+			alert(CannotSwitchToNewWindow.class);
 		}
 
+		if(!switchNext) {
+			alert(CannotSwitchToNewWindow.class);
+		}
+	}
+
+	private boolean shouldForceFullReload() {
+		return (boolean) getOption(Common.FORCE_FULL_RELOAD);
+	}
+
+	private void jsHide() {
+		_driver.executeScript("arguments[0].style.display = \"none\";", _webElement);
+	}
+
+	private void jsClear() {
+		jsSetValue("");
+	}
+
+	private void jsClick() {
+		_driver.executeScript("arguments[0].click();", _webElement);
+	}
+
+	private void jsSetValue(String value) {
+		_driver.executeScript("arguments[0].value = '" + value + "';", _webElement);
 	}
 
 	public String getTagName() throws Throwable {
-		doSelfCheck();
-		return _webElement.getTagName();
+		reload();
+		try {
+			return _webElement.getTagName();
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 	public String getAttribute(String s) throws Throwable {
-		doSelfCheck();
-		return _webElement.getAttribute(s);
+		reload();
+		try {
+			return _webElement.getAttribute(s);
+		} catch (Exception e) {
+			return null;
+		}
 	}
 
 
@@ -91,94 +168,31 @@ public class Element extends ElementOptions {
 		return name;
 	}
 
-	void entry() throws Throwable {
-		var sw = new StopWatch();
-		reload();
-		doAutoScrolling();
-		doHighlighting();
-		doDelayBefore(sw.elapsedTime());
-	}
-
-	private void doSwitchWindow() throws Throwable {
-		if (!isNull(_window)) {
-			try {
-				_driver.getWrappedWebDriver().switchTo().window(_window);
-			} catch (Exception e) {
-				end(e.getClass());
-			}
-		}
-	}
-
 	protected void doAutoScrolling() throws Throwable {
-		if (isDisplayed()) {
+		if (isVisible()) {
 			if (shouldScroll()) {
-				jsScroll();
+				try {
+					jsScroll();
+				} catch (Exception e) {
+					alert(CannotScrollAlert.class);
+				}
 			}
 		}
 	}
 
 	protected void doHighlighting() throws Throwable {
-		if (isDisplayed())
+		if (isVisible())
 			if (shouldHighlight())
 				highlight();
 	}
-
-
-	protected void doDelayBefore(long elapsed) {
-		// deduct any previous delay from desired delay to interact
-		if (allowDelays())
-			sleep(getDelayToInteractBefore() - elapsed);
-	}
-
-	protected void doDelayAfter() {
-		if (allowDelays())
-			Timer.sleep((long)getOption(Common.INTERACT_DELAY_AFTER));
-	}
-
-	private long getDelayToInteractBefore() {
-		return (long) getOption(Common.INTERACT_DELAY_BEFORE);
-	}
-
-
-
 
 	public String getHomeWindow() {
 		return _window;
 	}
 
-	protected void doDisplayedCheck() throws Throwable {
-		if (requiresElementVisible() && !isDisplayed()) {
-			WebDriverWait waitVisible = new WebDriverWait(_driver.getWrappedWebDriver(),
-										(long) getElementVisibleTimeout() / 1000, getRetryInterval());
-			try {
-				waitVisible.until(ExpectedConditions.visibilityOf(_webElement));
-			} catch (Exception e) {
-				end(DisplayedStatusError.class);
-			}
-		}
-		if (isNull(_webElement))
-			end(DisplayedStatusError.class);
-	}
-
-
-	protected void doEnabledCheck() throws Throwable {
-		if (requiresElementEnabled() && isDisabled()) {
-			WebDriverWait waitEnabled = new WebDriverWait(_driver.getWrappedWebDriver(),
-										(long) getElementEnabledTimeout() / 1000, getRetryInterval());
-			try {
-				_webElement = waitEnabled.until(ExpectedConditions.elementToBeClickable(_webElement));
-			} catch (Exception e) {
-				end(EnabledStatusError.class);
-			}
-		}
-		if (isNull(_webElement))
-			end(EnabledStatusError.class);
-	}
-
-
 	protected void exit() {
 		doDelayAfter();
-		//switchToNewWindowOpened();
+		switchToNewWindowOpened();
 	}
 
 	public void closeAlienWindows() {
@@ -209,67 +223,40 @@ public class Element extends ElementOptions {
 	}
 
 	public void closeWindow() {
+		String currentWindow = _driver.getWindowHandle();
+		if (_window.equals(currentWindow)) {
+			alert(CannotCloseActiveWindow.class);
+		}
 		try {
 			_driver.getWrappedWebDriver().switchTo().window(_window);
 			_driver.getWrappedWebDriver().close();
 			_driver.frameworkSettingsProtection();
 		} catch (Exception ignore) {
-		}
-	}
 
-	private void switchToNewWindowOpened() {
-//		try {
-//			Set<String> windows = _driver.getWindowHandles();
-//			windows.remove(_window);
-//			_driver.getWrappedWebDriver().switchTo().window(_newWindowOrder);
-//		} catch (Exception ignored) {
-//
-//		}
+		}
+		try {
+			_driver.getWrappedWebDriver().switchTo().window(currentWindow);
+		} catch (Exception e) {
+			alert(CannotSwitchBackToWindow.class);
+		}
 	}
 
 
 	public void hide() throws Throwable {
-		boolean supress = (boolean) getOption(Common.SUPPRESS_DELAYS);
+		if (!isExecutorEnabled())
+			alert(CannotUseJavaScript.class);
 		entry();
-		jsHide();
-		setOption(Common.SUPPRESS_DELAYS, supress);
+		try {
+			jsHide();
+		} catch (Exception e) {
+
+		}
 		exit();
-	}
-
-	private void jsHide() {
-		_driver.executeScript("arguments[0].style.display = \"none\";", _webElement);
-	}
-
-    public Element dragAndDrop(By by) throws Throwable {
-		Element element = new Element(_driver, by);
-        return dragAndDrop(element);
-    }
-
-    public Element dragAndDrop(Element target) throws Throwable {
-	    entry();
-		target.entry();
-        new Actions(_driver.getWrappedWebDriver()).dragAndDrop(this.getWrappedWebElement(), target.getWrappedWebElement()).perform();
-        target.exit();
-	    exit();
-        return this;
-    }
-
-	private void jsClear() {
-		jsSetValue("");
-	}
-
-	private void jsClick() {
-		_driver.executeScript("arguments[0].click();", _webElement);
-	}
-
-	private void jsSetValue(String value) {
-		_driver.executeScript("arguments[0].value = '" + value + "';", _webElement);
 	}
 
 	public Element click() throws Throwable {
 
-		reload();
-
+		entry();
 
 		if (requiresExecutorClick()) {
 			jsClick();
@@ -318,7 +305,7 @@ public class Element extends ElementOptions {
 		entry();
 
 		if (requireExecutorClear()) {
-			jsSetValue("");
+			jsClear();
 			exit();
 			return this;
 		}
@@ -336,13 +323,18 @@ public class Element extends ElementOptions {
 	}
 
 
-	void disableScreenshots() throws Throwable {
+	public void disableScreenshots() throws Throwable {
 		setOption(Common.ENABLE_SCREENSHOTS, false);
 	}
 
 	public Element setText(String text) throws Throwable {
+		entry();
 		if (requireExecutorSetText()) {
-			jsSetValue(text);
+			try {
+				jsSetValue(text);
+			} catch (Exception e) {
+				end(SetTextError.class);
+			}
 			exit();
 			return this;
 		}
@@ -350,8 +342,13 @@ public class Element extends ElementOptions {
 		try {
 			_webElement.sendKeys(text);
 		} catch (Exception e) {
+			alert(SetTextError.class);
 			if (shouldFallbackToExecutor()) {
-				jsSetValue(text);
+				try {
+					jsSetValue(text);
+				} catch (Exception e2) {
+					end(SetTextError.class);
+				}
 			}
 		}
 
@@ -373,9 +370,6 @@ public class Element extends ElementOptions {
 	}
 
 	public Element scrollDownTo() throws Throwable {
-
-		if (!isExecutorEnabled())
-			return this;
 
 		double searchScrollFactor =  (double) getOption(Common.SEARCHSCROLL_FACTOR);
 		int searchScrollDelay = (int) getOption(Common.SEARCHSCROLL_RESOLVE);
@@ -417,7 +411,6 @@ public class Element extends ElementOptions {
 
 	public Element highlight() throws Throwable {
 		unhighlight();
-		this.doSelfCheck();
 		_driver.executeScript("arguments[0].setAttribute('style', arguments[1]);", _webElement, getHighLightStyle());
 		var sw = new StopWatch();
 		setLastElementHighlighted(_webElement);
@@ -436,14 +429,6 @@ public class Element extends ElementOptions {
 		} catch (Exception ignored) {} // as long as it has removed the border!
 	}
 
-
-	private WebElement getLastElementHighlighted() {
-		return _lastElementHighlighted;
-	}
-
-	private void setLastElementHighlighted(WebElement element) {
-		_lastElementHighlighted = element;
-	}
 
 	public void submit() throws Throwable {
 		entry();
@@ -474,7 +459,7 @@ public class Element extends ElementOptions {
 		else
 			doSwitchWindow();
 
-		if (requiresElementVisible() && !isDisplayed()) {
+		if (requiresElementVisible() && !isVisible()) {
 			WebDriverWait waitVisible = new WebDriverWait(_driver.getWrappedWebDriver(),
 					(long) getElementVisibleTimeout() / 1000, getRetryInterval());
 			try {
@@ -498,18 +483,6 @@ public class Element extends ElementOptions {
 
 	public Element reload() throws Throwable {
 		return reload(false);
-//		if (!isNull(_window)) {
-//			try {
-//				_driver.getWrappedWebDriver().switchTo().window(_window);
-//				return;
-//			} catch (Exception e) {
-//				end(e.getClass());
-//			}
-//		}
-	}
-
-	public boolean shouldForceFullReload() {
-		return (boolean) getOption(Common.FORCE_FULL_RELOAD);
 	}
 
 	public Element reload(boolean force) throws Throwable {
@@ -533,7 +506,7 @@ public class Element extends ElementOptions {
 		return this;
 	}
 
-	public void lockToWindow() throws Throwable {
+	private void lockToWindow() throws Throwable {
 		if (!shouldLockToWindow())
 			return;
 		try {
@@ -564,29 +537,17 @@ public class Element extends ElementOptions {
 	}
 
 	public boolean isSelected() throws Throwable {
-		try {
-			load();
-		} catch (Exception ignored) {
-
-		}
+		reload();
 		return _webElement.isSelected();
 	}
 
 	public boolean isDisabled() throws Throwable {
-		try {
-			load();
-		} catch (Exception ignored) {
-
-		}
+		reload();
 		return !_webElement.isEnabled();
 	}
 
 	public String getText() throws Throwable {
-		try {
-			load();
-		} catch (Exception ignored) {
-
-		}
+		reload();
 		String value = null;
 		value = _webElement.getText();
 		return value;
@@ -621,13 +582,8 @@ public class Element extends ElementOptions {
 		return elements;
 	}
 
-
-	public boolean isDisplayed() throws Throwable {
-		try {
-			load();
-		} catch (Exception ignored) {
-
-		}
+	public boolean isVisible() throws Throwable {
+		reload();
 		boolean value;
 		try {
 			value = _webElement.isDisplayed() && _webElement.getRect().height > 0;
@@ -638,11 +594,7 @@ public class Element extends ElementOptions {
 	}
 
 	public boolean isFullyDisplayed() throws Throwable {
-		try {
-			load();
-		} catch (Exception ignored) {
-
-		}
+		reload();
 		try {
 			Rectangle rectangle = _webElement.getRect();
 			Dimension dimension = _driver.getWrappedWebDriver().manage().window().getSize();
@@ -650,19 +602,14 @@ public class Element extends ElementOptions {
 					rectangle.getY() >= 0 &&
 					rectangle.getX() + rectangle.width <= dimension.width &&
 					rectangle.getX() + rectangle.height <= dimension.height &&
-					isDisplayed();
+					_webElement.isDisplayed() && _webElement.getRect().height > 0;
 		} catch (Exception e) {
-			end(e.getClass());
+			return false;
 		}
-		return false;
 	}
 
 	public Point getLocation() throws Throwable {
-		try {
-			load();
-		} catch (Exception ignored) {
-
-		}
+		reload();
 		Point value;
 		try {
 			value = _webElement.getLocation();
@@ -673,11 +620,7 @@ public class Element extends ElementOptions {
 	}
 
 	public Dimension getSize() throws Throwable {
-		try {
-			load();
-		} catch (Exception ignored) {
-
-		}
+		reload();
 		Dimension value;
 		try {
 			value = _webElement.getSize();
@@ -688,11 +631,7 @@ public class Element extends ElementOptions {
 	}
 
 	public Rectangle getRect() throws Throwable {
-		try {
-			load();
-		} catch (Exception ignored) {
-
-		}
+		reload();
 		Rectangle value;
 		try {
 			value = _webElement.getRect();
@@ -703,11 +642,7 @@ public class Element extends ElementOptions {
 	}
 
 	public String getCssValue(String s) throws Throwable {
-		try {
-			load();
-		} catch (Exception ignored) {
-
-		}
+		reload();
 		String value;
 		try {
 			value = _webElement.getCssValue(s);
@@ -718,11 +653,7 @@ public class Element extends ElementOptions {
 	}
 
 	public Coordinates getCoordinates() throws Throwable {
-		try {
-			load();
-		} catch (Exception ignored) {
-
-		}
+		reload();
 		Coordinates value;
 		try {
 			value = ((Locatable) _driver.getWrappedWebDriver()).getCoordinates();

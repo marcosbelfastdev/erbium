@@ -41,6 +41,8 @@ public class BaseElement {
      */
     protected String _name;
 
+    protected Integer _newWindowOrder;
+
     public BaseElement(Driver driver, By by) {
         setLocator(by);
         setDriver(driver);
