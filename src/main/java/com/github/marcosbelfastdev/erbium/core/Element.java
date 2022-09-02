@@ -73,12 +73,21 @@ public class Element extends ElementOptions {
 		}
 	}
 
+	public Element prepareToSwitchToNewWindow() {
+		switchToNewWindow = true;
+		return this;
+	}
+
 	private void switchToNewWindowOpened() {
+		if (isNull(switchToNewWindow)) {
+			alert(CannotSwitchToNewWindow.class);
+		}
+		switchToNewWindow = null;
 		boolean switchNext = false;
 		try {
 			Set<String> windows = _driver.getWindowHandles();
 			for (String window : windows) {
-				if (window.equals(_window)) {
+				if (!window.equals(_window)) {
 					switchNext = true;
 				}
 				if (switchNext)
