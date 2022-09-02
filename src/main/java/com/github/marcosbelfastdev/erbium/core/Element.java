@@ -64,7 +64,9 @@ public class Element extends ElementOptions {
 	}
 
 	private void doSwitchWindow() throws Throwable {
-		if (!isNull(_window)) {
+		if (isNull(_window))
+			return;
+		if (!_window.equals(_driver.getWindowHandle())) {
 			try {
 				_driver.getWrappedWebDriver().switchTo().window(_window);
 			} catch (Exception e) {
