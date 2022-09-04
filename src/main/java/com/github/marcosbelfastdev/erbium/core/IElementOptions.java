@@ -1,13 +1,11 @@
 package com.github.marcosbelfastdev.erbium.core;
 
-import org.openqa.selenium.WebDriver;
-
 public interface IElementOptions {
     void setPlaybackOptions();
-    ElementOptions setOption(Common common, Object option) throws Throwable;
+    Element setOption(Common common, Object option) throws Throwable;
     Object getOption(Common playbackOption);
-    ElementOptions reset();
-    ElementOptions resetOptions();
+    Element reset();
+    Element resetOptions();
     Boolean shouldLoad();
     Long delayBefore();
     Long resolve();

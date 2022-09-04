@@ -96,7 +96,7 @@ public class Driver extends DriverOptions implements IDriver, IDriverScreenshot 
         if (webElements.size() < 1) {
             end(SyncedFindElementsError.class);
         }
-        return new Element(this, webElements.get(0));
+        return new Element(this, webElements.get(0), bys[0]);
     }
 
     @Override

@@ -135,14 +135,6 @@ class PlaybackOptions {
 
 	public void evaluateOptionChange(Common option, Object value) throws Throwable {
 
-		if (value instanceof Integer ||
-			value instanceof Double ||
-			value instanceof Long ||
-			value instanceof Float)
-			if ((double) value < 0d) {
-				end(OptionValueTooSmall.class);
-		}
-
 		Common[] common = {
 				Common.RESOLVE_TIMEOUT,
 				Common.ENABLED_TIMEOUT,

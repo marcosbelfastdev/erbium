@@ -2,7 +2,6 @@ package com.github.marcosbelfastdev.erbium.core;
 
 import com.github.marcosbelfastdev.erbium.exceptions.*;
 import org.openqa.selenium.*;
-import org.openqa.selenium.interactions.Actions;
 import org.openqa.selenium.interactions.internal.Coordinates;
 import org.openqa.selenium.interactions.internal.Locatable;
 import org.openqa.selenium.support.ui.ExpectedConditions;
@@ -11,6 +10,7 @@ import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -21,15 +21,88 @@ import static com.github.marcosbelfastdev.erbium.core.Timer.sleep;
 import static java.util.Objects.isNull;
 
 
-public class Element extends ElementOptions {
+public class Element implements IElementOptions {
+
+	/*
+    Driver that originated the element
+     */
+	protected Driver _driver;
+
+	/**
+	 * Base element locator
+	 */
+	protected By _locator;
+
+	/**
+	 * Wrapped WebElement
+	 */
+	protected WebElement _webElement;
+
+	/**
+	 * A record of the last element highlighted.
+	 * It is used in order to unhighlight an element highlighted before.
+	 */
+	protected WebElement _lastElementHighlighted;
+
+	/**
+	 * Window that is associated to an element for automatic switching
+	 * when the element is called.
+	 * A window is only associated if LOCK_TO_WINDOW is true
+	 * and after the element has been found once.
+	 */
+	protected String _window;
+
+	/**
+	 * Name of the element
+	 */
+	protected String _name;
+
+	protected Boolean switchToNewWindow;
+
+	protected PlaybackOptions _playbackOptions;
 
 
 	public Element(Driver driver, By by) {
-		super(driver, by);
+		setLocator(by);
+		setDriver(driver);
+		setPlaybackOptions();
 	}
 
 	public Element(Driver driver, WebElement webElement) {
-		super(driver, webElement);
+		setDriver(driver);
+		setWrappedWebElement(webElement);
+		setPlaybackOptions();
+	}
+
+	public Element(Driver driver, WebElement webElement, By locator) {
+		setDriver(driver);
+		setLocator(locator);
+		setPlaybackOptions();
+	}
+
+	protected void setWrappedWebElement(WebElement webElement) {
+		_webElement = webElement;
+	}
+
+	protected void setLocator(By by) {
+		_locator = by;
+	}
+
+	protected void setDriver(Driver driver) {
+		this._driver = driver;
+	}
+
+
+	public void setElementName(String name) {
+		_name = name;
+	}
+
+	public WebElement getWrappedWebElement() {
+		return _webElement;
+	}
+
+	public By getBy() {
+		return _locator;
 	}
 
 	private WebElement getLastElementHighlighted() {
@@ -410,6 +483,7 @@ public class Element extends ElementOptions {
 
 	/**
 	 * Resets an element to its original state.
+	 *
 	 * @return
 	 */
 	@Override
@@ -497,7 +571,7 @@ public class Element extends ElementOptions {
 	}
 
 	public Element reload(boolean force) throws Throwable {
-		if (force || shouldForceFullReload() || isNull(_webElement)) {
+		if (force || shouldForceFullReload() || isNull(_locator)) {
 			load();
 			return this;
 		}
@@ -672,5 +746,152 @@ public class Element extends ElementOptions {
 			return null;
 		}
 		return value;
+	}
+
+	// OPTIONS
+	public Map<Common, Object> getOptions() {
+		return _playbackOptions.getOptionsMap();
+	}
+
+	@Override
+	public Object getOption(Common option) {
+		Object value;
+		value = _playbackOptions.getOption(option);
+		if (isNull(value))
+			value = _driver.getOption(option);
+		return value;
+	}
+
+	@Override
+	public Element setOption(Common option, Object value) throws Throwable {
+		_playbackOptions.setOption(option, value);
+		return this;
+	}
+
+	@Override
+	public void setPlaybackOptions() {
+		_playbackOptions = new PlaybackOptions();
+	}
+
+
+	@Override
+	public Element resetOptions() {
+		_playbackOptions = new PlaybackOptions();
+		return this;
+	}
+
+	@Override
+	public Boolean shouldLoad() {
+		return (boolean) getOption(Common.LOAD_ON_DEMAND);
+	}
+
+	@Override
+	public Long delayBefore() {
+		return (long) getOption(Common.INTERACT_DELAY_BEFORE);
+	}
+
+	@Override
+	public Long resolve() {
+		return (long) getOption(Common.RESOLVE_TIMEOUT);
+	}
+
+	@Override
+	public Long retryInterval() {
+		return (long) getOption(Common.RETRY_INTERVAL);
+	}
+
+	protected boolean isExecutorEnabled() {
+		return true;
+	}
+
+	protected int getSearchScrollTimeout() {
+		return (int) getOption(Common.SEARCHSCROLL_TIMEOUT);
+	}
+
+	protected boolean shouldHandleAlerts() {
+		return (boolean) getOption(Common.HANDLE_ALERTS);
+	}
+
+
+	protected boolean shouldScroll() {
+		return (boolean) getOption(Common.SCROLL_TO_ELEMENTS);
+	}
+
+	public Boolean shouldHighlight() {
+		return (boolean) getOption(Common.HIGHLIGHT_ELEMENTS);
+	}
+
+	@Override
+	public Long highlightAfter() {
+		return (long) getOption(Common.HIGHLIGHT_DELAY_AFTER);
+	}
+
+	@Override
+	public Boolean shouldSuppressDelays() {
+		return (boolean) getOption(Common.SUPPRESS_DELAYS);
+	}
+
+	public long getResolveTimeout() {
+		return (long) getOption(Common.RESOLVE_TIMEOUT);
+	}
+
+	public boolean requiresExecutorClick() {
+		return (boolean) getOption(Common.EXECUTOR_CLICKS);
+	}
+
+	public boolean shouldFallbackToExecutor() {
+		return (boolean) getOption(Common.FALLBACK_TO_EXECUTOR);
+	}
+
+	public long getRetryInterval() {
+		return (long) getOption(Common.RETRY_INTERVAL);
+	}
+
+	public boolean requiresElementVisible() {
+		return (boolean) getOption(Common.REQUIRE_VISIBLE);
+	}
+
+	public long getElementVisibleTimeout() {
+		return (long) getOption(Common.VISIBLE_TIMEOUT);
+	}
+
+	public boolean requiresElementEnabled() {
+		return (boolean) getOption(Common.REQUIRE_ENABLED);
+	}
+
+	public long getElementEnabledTimeout() {
+		return (long) getOption(Common.ENABLED_TIMEOUT);
+	}
+
+	public boolean shouldHighlightFrames() {
+		return (boolean) getOption(Common.HIGHLIGHT_FRAMES);
+	}
+
+	public boolean shouldLockToWindow() {
+		return (boolean) getOption(Common.WINDOW_LOCKING);
+	}
+
+	public boolean requireExecutorClear() {
+		return (boolean) getOption(Common.EXECUTOR_CLEAR);
+	}
+
+	public boolean requireExecutorSetText() {
+		return (boolean) getOption(Common.EXECUTOR_SETTEXT);
+	}
+
+	public boolean isScreenshotEnabled() {
+		return (boolean) getOption(Common.ENABLE_SCREENSHOTS);
+	}
+
+	public String getHighLightStyle() {
+		return (String) getOption(Common.HIGHLIGHT_STYLE);
+	}
+
+	public long getAfterHighlightDelay() {
+		return (long) getOption(Common.HIGHLIGHT_DELAY_AFTER);
+	}
+
+	public boolean allowDelays() {
+		return !shouldSuppressDelays();
 	}
 }
