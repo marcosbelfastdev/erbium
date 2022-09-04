@@ -8,7 +8,7 @@ import java.util.Map;
 
 import static com.github.marcosbelfastdev.erbium.core.ErrorHandling.end;
 
-class PlaybackOptions {
+public class PlaybackOptions {
 
 	private final Map<Common, Object> _options;
 
@@ -202,7 +202,7 @@ class PlaybackOptions {
 		}
 	}
 
-	protected void setOption(Common option, Object value) throws Throwable {
+	public void setOption(Common option, Object value) throws Throwable {
 		value = adjustTypes(option, value);
 		if (_options.containsKey(option)) {
 			evaluateOptionChange(option, value);
@@ -211,7 +211,7 @@ class PlaybackOptions {
 			_options.put(option, value);
 	}
 
-	protected Object getOption(Common option) {
+	public Object getOption(Common option) {
 
 		Object value = null;
 
@@ -225,11 +225,17 @@ class PlaybackOptions {
 		_options.remove(playbackOption);
 	}
 
-	protected Map<Common, Object> getOptionsMap() {
+	public void lockOptions(Common... playbackOptions) {
+		for (Common playbackOption : playbackOptions) {
+			// to implement so to avoid some options from ever being changed.
+		}
+	}
+
+	public Map<Common, Object> getOptionsMap() {
 		return _options;
 	}
 
-	protected PlaybackOptions duplicate() {
+	public PlaybackOptions duplicate() {
 
 		Map<Common, Object> options = new HashMap<Common, Object>(_options);
 		return new PlaybackOptions(options);

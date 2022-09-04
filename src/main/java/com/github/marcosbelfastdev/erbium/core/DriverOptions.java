@@ -21,6 +21,12 @@ public class DriverOptions implements IDriverOptions {
         frameworkSettingsProtection();
     }
 
+    public DriverOptions(WebDriver driver, PlaybackOptions playbackOptions) {
+        _driver = driver;
+        setPlaybackOptions(playbackOptions);
+        frameworkSettingsProtection();
+    }
+
     public WebDriver getWrappedWebDriver() {
         return _driver;
     }
@@ -36,6 +42,12 @@ public class DriverOptions implements IDriverOptions {
     @Override
     public void setPlaybackOptions() {
         _playbackOptions = PlaybackOptions.init();
+        _changedPlaybackOptions = new PlaybackOptions();
+    }
+
+    @Override
+    public void setPlaybackOptions(PlaybackOptions playbackOptions) {
+        _playbackOptions = playbackOptions;
         _changedPlaybackOptions = new PlaybackOptions();
     }
 

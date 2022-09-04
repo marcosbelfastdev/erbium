@@ -276,6 +276,7 @@ public class Element implements IElementOptions {
 
 	protected void exit() {
 		doDelayAfter();
+		unhighlight();
 		switchToNewWindowOpened();
 	}
 
@@ -609,7 +610,7 @@ public class Element implements IElementOptions {
 	public Element setFocus() throws Throwable {
 		entry();
 		jsSetFocus();
-		unhighlight();
+		exit();
 		return this;
 	}
 
@@ -804,8 +805,8 @@ public class Element implements IElementOptions {
 		return true;
 	}
 
-	protected int getSearchScrollTimeout() {
-		return (int) getOption(Common.SEARCHSCROLL_TIMEOUT);
+	protected Long getSearchScrollTimeout() {
+		return (long) getOption(Common.SEARCHSCROLL_TIMEOUT);
 	}
 
 	protected boolean shouldHandleAlerts() {

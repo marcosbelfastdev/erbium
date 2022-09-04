@@ -6,6 +6,7 @@ public interface IDriverOptions {
     WebDriver getWrappedWebDriver();
     void resetPlaybackOptions() throws Throwable;
     void setPlaybackOptions();
+    void setPlaybackOptions(PlaybackOptions playbackOptions);
     DriverOptions setOption(Common common, Object option) throws Throwable;
     Object getOption(Common playbackOption);
     DriverOptions reset() throws Throwable;
