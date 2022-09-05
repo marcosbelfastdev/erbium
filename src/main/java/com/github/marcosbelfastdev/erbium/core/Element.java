@@ -2,16 +2,15 @@ package com.github.marcosbelfastdev.erbium.core;
 
 import com.github.marcosbelfastdev.erbium.exceptions.*;
 import org.openqa.selenium.*;
+import org.openqa.selenium.NoSuchElementException;
 import org.openqa.selenium.interactions.internal.Coordinates;
 import org.openqa.selenium.interactions.internal.Locatable;
 import org.openqa.selenium.support.ui.ExpectedConditions;
 import org.openqa.selenium.support.ui.FluentWait;
 import org.openqa.selenium.support.ui.Wait;
 import org.openqa.selenium.support.ui.WebDriverWait;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -750,7 +749,15 @@ public class Element implements IElementOptions {
 	}
 
 	// OPTIONS
-	public Map<Common, Object> getOptions() {
+	public Map<Common, Object> getOptionsMap() {
+		Map<Common, Object> map = new HashMap<>();
+		for (Common option : _driver.getOptionsMap().keySet()) {
+			map.put(option, getOption(option));
+		}
+		return map;
+	}
+
+	public Map<Common, Object> getDiffOptionsMap() {
 		return _playbackOptions.getOptionsMap();
 	}
 
