@@ -26,7 +26,6 @@ public class PlaybackOptions {
 		Map<Common, Object> options = new HashMap<>();
 		options.put(Common.LOAD_ON_DEMAND, true);
 		options.put(Common.RESOLVE_TIMEOUT, 120000L);
-		options.put(Common.FORCE_FULL_RELOAD, false);
 		options.put(Common.INTERACT_DELAY_BEFORE, 0L);
 		options.put(Common.SCROLL_DELAY_AFTER, 0L);
 		options.put(Common.HIGHLIGHT_STYLE, "border: 2px solid springgreen; border-radius: 5px;");
@@ -48,7 +47,6 @@ public class PlaybackOptions {
 		options.put(Common.ALERTS_ACTION, AlertOption.DISMISS);
 		options.put(Common.SEARCHSCROLL_RESOLVE, 2);
 		options.put(Common.SEARCHSCROLL_FACTOR, 0.85d);
-		options.put(Common.SEARCHSCROLL_HEIGHT, 500L);
 		options.put(Common.SEARCHSCROLL_TIMEOUT, options.get(Common.RESOLVE_TIMEOUT));
 		options.put(Common.FALLBACK_TO_EXECUTOR, true);
 		options.put(Common.WINDOW_LOCKING, true);
