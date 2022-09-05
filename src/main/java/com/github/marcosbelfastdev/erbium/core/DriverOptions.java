@@ -4,6 +4,8 @@ import org.openqa.selenium.Dimension;
 import org.openqa.selenium.Point;
 import org.openqa.selenium.WebDriver;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static java.util.Objects.isNull;
@@ -83,6 +85,21 @@ public class DriverOptions implements IDriverOptions {
         } catch (Exception ignored) {
 
         }
+    }
+
+    /**
+     * Retrieves current set of playback options.
+     * @return
+     */
+    public Map<Common, Object> getOptionsMap() {
+        Map<Common, Object> map = new HashMap<>();
+        for (Common option : _playbackOptions.getOptionsMap().keySet()) {
+            if (_changedPlaybackOptions.getOptionsMap().containsKey(option))
+                map.put(option, _changedPlaybackOptions.getOptionsMap().get(option));
+            else
+                map.put(option, _playbackOptions.getOptionsMap().get(option));
+        }
+        return map;
     }
 
     /**
