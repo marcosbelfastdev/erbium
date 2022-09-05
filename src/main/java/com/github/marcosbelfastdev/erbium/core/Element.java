@@ -535,6 +535,26 @@ public class Element implements IElementOptions {
 					return driver.findElement(_locator);
 				}
 			});
+		} else if (isNull(_locator)) {
+			try {
+				_webElement.isDisplayed();
+			} catch (Exception e) {
+				// might be there is a problem so we will load the element
+				//else we leave it
+				/**
+				 * Wrapped web element exists (possibly as a result of a findElements from a parent web element.
+				 * In this case, the locator is null (to do a locator parsing feature here to extract the
+				 * locator out of the web element toString())
+				 * and the it has to be 'visible' to be reused (current limitation).
+				 */
+				Wait<WebDriver> wait = new FluentWait<WebDriver>(_driver.getWrappedWebDriver())
+						.withTimeout(resolve(), TimeUnit.MILLISECONDS)
+						.pollingEvery(retryInterval(), TimeUnit.MILLISECONDS)
+						.ignoring(NoSuchElementException.class);
+
+				_webElement = wait.until(ExpectedConditions.visibilityOf(_webElement));
+			}
+
 		}
 
 		if (isNull(_webElement))
@@ -568,27 +588,7 @@ public class Element implements IElementOptions {
 	}
 
 	public Element reload() throws Throwable {
-		return reload(false);
-	}
-
-	public Element reload(boolean force) throws Throwable {
-		if (force || shouldForceFullReload() || isNull(_locator)) {
-			load();
-			return this;
-		}
-
-		doSwitchWindow();
-
-		try {
-			_webElement = _driver.getWrappedWebDriver().findElements(_locator).get(0);
-		} catch (Exception e) {
-			end(NoElementFound.class);
-		}
-		if (requiresElementVisible() && !(_webElement.isDisplayed() && _webElement.getRect().height > 0))
-			end(DisplayedStatusError.class);
-		if (requiresElementEnabled() && !_webElement.isEnabled())
-			end(EnabledStatusError.class);
-
+		load();
 		return this;
 	}
 

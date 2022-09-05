@@ -33,10 +33,11 @@ public class DriverOptions implements IDriverOptions {
 
     @Override
     public void resetPlaybackOptions() throws Throwable {
-        for (Common playbackOption : _changedPlaybackOptions.getOptionsMap().keySet()) {
-            _changedPlaybackOptions.setOption(playbackOption, _playbackOptions.getOption(playbackOption));
-            _changedPlaybackOptions.removeOption(playbackOption);
-        }
+//        for (Common playbackOption : _changedPlaybackOptions.getOptionsMap().keySet()) {
+//            _changedPlaybackOptions.setOption(playbackOption, _playbackOptions.getOption(playbackOption));
+//            _changedPlaybackOptions.removeOption(playbackOption);
+//        }
+        _changedPlaybackOptions.getOptionsMap().clear();
     }
 
     @Override

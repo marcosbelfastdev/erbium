@@ -5,6 +5,7 @@ import com.github.marcosbelfastdev.erbium.exceptions.*;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static com.github.marcosbelfastdev.erbium.core.ErrorHandling.end;
 
@@ -18,7 +19,7 @@ public class PlaybackOptions {
 	}
 
 	public PlaybackOptions(Map<Common, Object> options) {
-		this._options = new HashMap<>(options);
+		this._options = new ConcurrentHashMap<>(options);
 	}
 
 	public static PlaybackOptions init() {
