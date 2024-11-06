@@ -1,5 +1,7 @@
 package com.github.marcosbelfastdev.erbium.core;
 
+import java.time.Duration;
+
 public interface IElementOptions {
     void setPlaybackOptions();
     Element setOption(Common common, Object option) throws Throwable;
@@ -8,7 +10,7 @@ public interface IElementOptions {
     Element resetOptions();
     Boolean shouldLoad();
     Long delayBefore();
-    Long resolve();
+    Duration resolve();
     Long retryInterval();
     Boolean shouldHighlight();
     Long highlightAfter();
