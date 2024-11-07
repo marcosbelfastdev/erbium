@@ -108,9 +108,9 @@ public class DriverManage {
 	}
 
 	
-	public WebDriver.ImeHandler ime() {
-		return _driver.getWrappedWebDriver().manage().ime();
-	}
+//	public WebDriver.ImeHandler ime() {
+//		return _driver.getWrappedWebDriver().manage().ime();
+//	}
 	
 	
 	public DriverWindow window() {
